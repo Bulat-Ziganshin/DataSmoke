@@ -8,8 +8,8 @@ Since already compressed, text and multimedia files are better compressed with s
 This project will provide various experimental algorithms that can recognize some of special datatypes (not necessary all), as well as samples of data that are especially hard to smoke correctly.
 
 
-The full list of algorithms:
+The full list of smells:
 
-- ByteDistribution: computes entropy of individual bytes (2 GB/s).
-- WordDistribution: computes entropy of 16-bit words.
-- DWordDistribution: computes entropy of 32-bit dwords (3 GB/s).
+- ByteSmoker: computes entropy of individual bytes (2 GB/s).
+- WordSmoker: computes entropy of 16-bit words (1 GB/s).
+- DWordSmoker: computes entropy of 32-bit dwords (3 GB/s).

@@ -56,7 +56,41 @@ void ByteSmoker::smoke (void *buf, size_t bufsize, double *entropy)
   {
     size_t count  =  count1[i] + count2[i] + count3[i] + count4[i];
     if (count)
-      order0 += count * log(double(bufsize/count))/log(double(2)) / 8;
+      order0 += count * log(double(bufsize)/count)/log(double(2)) / 8;
+  }
+
+  *entropy  =  order0 / bufsize;
+}
+
+
+/**************************************************************************/
+/* Word smoker: calculate compression ratio with the 16-bit order-0 model */
+/**************************************************************************/
+
+class WordSmoker : public Smoker
+{
+  uint32_t *count;
+  size_t bits[256];
+public:
+  WordSmoker()                {count = new uint32_t[256*256];}
+  virtual const char* name()  {return "WordSmoker";};
+  virtual ~WordSmoker()       {delete[] count;}
+  virtual void smoke (void *buf, size_t bufsize, double *entropy);
+};
+
+void WordSmoker::smoke (void *buf, size_t bufsize, double *entropy)
+{
+  memset (count, 0, 256*256*sizeof(*count));
+
+  byte *p = (byte*) buf;
+  for (int i=0; i<bufsize-1; i++)
+    count[ *(uint16_t*)(p+i) ]++;
+
+  double order0 = 0;
+  for (int i=0; i<256*256; i++)
+  {
+    if (count[i])
+      order0 += count[i] * log(double(bufsize)/count[i])/log(double(2)) / 16;
   }
 
   *entropy  =  order0 / bufsize;
@@ -154,8 +188,9 @@ int main (int argc, char **argv)
     fprintf(stderr, "%sProcessing %s: ", file>1?"\n":"", argv[file]);
 
     ByteSmoker  ByteS;
+    WordSmoker  WordS;
     DWordSmoker DWordS;
-    Smoker *smokers[] = {&ByteS, &DWordS};
+    Smoker *smokers[] = {&ByteS, &WordS, &DWordS};
     const int NumSmokers = sizeof(smokers)/sizeof(*smokers);
     double entropy,  min_entropy[NumSmokers],  avg_entropy[NumSmokers] = {0},  max_entropy[NumSmokers] = {0};
     for (int i=0; i<NumSmokers; ++i)  min_entropy[i] = 1;
