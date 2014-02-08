@@ -20,6 +20,7 @@ public:
   virtual ~Smoker() {}
 };
 
+
 /**********************************************************************/
 /* Byte smoker: calculate compression ratio with the order-0 model    */
 /**********************************************************************/
@@ -91,17 +92,18 @@ DWordSmoker::DWordSmoker()
 
 void DWordSmoker::smoke (void *buf, size_t bufsize, double *entropy)
 {
-  const size_t   STEP = 4;         // Check only every n'th position
-  const uint32_t FILTER = 16;      // Of those checked, count only every n'th hash
-  const uint32_t MAX_HASH = (1u<<31) / (FILTER/2);  // Count only hashes smaller than this value
+  const size_t   STEP = 4;                                          // Check only every n'th position
+  const uint32_t FILTER = 16;                                       // Of those checked, count only every n'th hash
+  const uint32_t FILTER_MAX_HASH = (1u<<31) / (FILTER/2);           // Count only hashes smaller than this value
+  const uint32_t FILTER_HASH_DIVIDER = FILTER_MAX_HASH / CHAR_BIT;  // Dividing filtered hashes by this value will leave only 3 highest bits required to address bit in the byte
 
   memset(table,0,HASHSIZE);
   byte *p = (byte*) buf;
   for (size_t i=0; i<bufsize-STEP+1; i+=STEP)
   {
     uint32_t hash = hash_function(*(uint32_t*)(p+i));
-    if (hash < MAX_HASH)
-      table[hash % HASHSIZE]  |=  1 << (hash>>25);
+    if (hash < FILTER_MAX_HASH)
+      table[hash % HASHSIZE]  |=  1 << (hash/FILTER_HASH_DIVIDER);
   }
 
   size_t count = 0;
