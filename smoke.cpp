@@ -152,7 +152,7 @@ int main (int argc, char **argv)
   DWordSmoker DWordS;
   Smoker *smokers[] = {&ByteS, &DWordS};
   const int NumSmokers = sizeof(smokers)/sizeof(*smokers);
-  double entropy,  min_entropy[NumSmokers],  avg_entropy[NumSmokers] = {0};
+  double entropy,  min_entropy[NumSmokers],  avg_entropy[NumSmokers] = {0},  max_entropy[NumSmokers] = {0};
   for (int i=0; i<NumSmokers; ++i)  min_entropy[i] = 1;
 
   uint64_t origsize = 0;
@@ -170,6 +170,8 @@ int main (int argc, char **argv)
       smokers[i]->smoke(buf, buf_bytes, &entropy);
       if (entropy < min_entropy[i])
         min_entropy[i] = entropy;
+      if (entropy > max_entropy[i])
+        max_entropy[i] = entropy;
       avg_entropy[i] += entropy*buf_bytes;
   }
 
@@ -178,6 +180,6 @@ int main (int argc, char **argv)
 
   char temp1[100];  fprintf(stderr, "Processed %s bytes\n", show3(origsize,temp1));
   for (int i=0; i<NumSmokers; i++)
-    fprintf(stderr, "%s entropy: minimum %.2lf%%, average %.2lf%%\n", smokers[i]->name(), min_entropy[i]*100, avg_entropy[i]/origsize*100);
+    fprintf(stderr, "%s entropy: minimum %.2lf%%, average %.2lf%%, maximum %.2lf%%\n", smokers[i]->name(), min_entropy[i]*100, avg_entropy[i]/origsize*100, max_entropy[i]*100);
   return EXIT_SUCCESS;
 }
