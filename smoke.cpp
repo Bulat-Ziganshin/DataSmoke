@@ -16,7 +16,7 @@ class Smoker
 {
 public:
   virtual void smoke (void *buf, size_t bufsize, double *entropy) = 0;
-  virtual ~Smoker();
+  virtual ~Smoker() {}
 };
 
 /**********************************************************************/
@@ -53,7 +53,7 @@ void ByteSmoker::smoke (void *buf, size_t bufsize, double *entropy)
       order0 += count * log(double(bufsize/count))/log(double(2)) / 8;
   }
 
-  *entropy = order0 / bufsize;
+  *entropy  =  order0 / bufsize;
 }
 
 
@@ -71,11 +71,20 @@ const size_t HASHSIZE = 128*kb;
 
 class DWordSmoker : public Smoker
 {
+  size_t bits[256];
   byte table[HASHSIZE];
 public:
+  DWordSmoker();
   virtual void smoke (void *buf, size_t bufsize, double *entropy);
   virtual ~DWordSmoker() {}
 };
+
+DWordSmoker::DWordSmoker()
+{
+  bits[0] = 0;
+  for (int i=0; i<256; i++)
+    bits[i]  =  bits[i/2] + (i%2);
+}
 
 void DWordSmoker::smoke (void *buf, size_t bufsize, double *entropy)
 {
@@ -92,19 +101,12 @@ void DWordSmoker::smoke (void *buf, size_t bufsize, double *entropy)
       table[hash % HASHSIZE]  |=  1 << (hash>>25);
   }
 
-  size_t count[256] = {0},  bits[256] = {0};
+  size_t count = 0;
   for (size_t i=0; i<HASHSIZE; i++)
-    count[ table[i] ]++;
+    count += bits[table[i]];
 
-  size_t hashes_used = 0;
-  for (int i=0; i<256; i++)
-  {
-    bits[i]  =  bits[i/2] + (i%2);
-    hashes_used  +=  bits[i] * count[i];
-  }
-
-  // We have checked bufsize/(STEP*FILTER) hashes and found hashes_used original values among them
-  *entropy = hashes_used / (double(bufsize)/(STEP*FILTER));
+  // We have checked bufsize/(STEP*FILTER) hashes and found `count` original values among them
+  *entropy  =  count / (double(bufsize)/(STEP*FILTER));
 }
 
 
