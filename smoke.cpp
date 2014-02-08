@@ -15,8 +15,8 @@ typedef unsigned char byte;
 class Distribution
 {
 public:
-//  Distribution();
-//  ~Distribution();
+  virtual void smoke (void *buf, size_t bufsize, double *entropy) = 0;
+  virtual ~Distribution();
 };
 
 /*************************************************************************/
@@ -26,9 +26,7 @@ public:
 class ByteDistribution : public Distribution
 {
 public:
-//  ByteDistribution();
-  void smoke (void *buf, size_t bufsize, double *entropy);
-//  ~ByteDistribution();
+  virtual void smoke (void *buf, size_t bufsize, double *entropy);
 };
 
 void ByteDistribution::smoke (void *buf, size_t bufsize, double *entropy)
@@ -58,6 +56,7 @@ void ByteDistribution::smoke (void *buf, size_t bufsize, double *entropy)
   *entropy = order0 / bufsize;
 }
 
+
 /**********************************************************************/
 /* DWord distribution                                                 */
 /**********************************************************************/
@@ -66,6 +65,45 @@ uint32_t hash_function (uint32_t x)
 {
   uint64_t hash  =  x * uint64_t(123456791u);
   return uint32_t(hash>>32) ^ uint32_t(hash);
+}
+
+const size_t HASHSIZE = 128*kb;
+
+class DWordDistribution : public Distribution
+{
+  byte table[HASHSIZE];
+public:
+  virtual void smoke (void *buf, size_t bufsize, double *entropy);
+  virtual ~DWordDistribution() {}
+};
+
+void DWordDistribution::smoke (void *buf, size_t bufsize, double *entropy)
+{
+  const size_t   STEP = 4;         // Check every n'th position
+  const uint32_t FILTER = 16;      // Of checked, count every n'th hash
+  const uint32_t MAX_HASH = (1u<<31) / (FILTER/2);
+
+  memset(table,0,HASHSIZE);
+  byte *p = (byte*) buf;
+  for (size_t i=0; i<bufsize-STEP+1; i+=STEP)
+  {
+    uint32_t hash = hash_function(*(uint32_t*)(p+i));
+    if (hash < MAX_HASH)
+      table[hash % HASHSIZE]  |=  1 << (hash>>25);
+  }
+
+  size_t count[256] = {0},  bits[256] = {0};
+  for (size_t i=0; i<HASHSIZE; i++)
+    count[ table[i] ]++;
+
+  size_t hashes_used = 0;
+  for (int i=0; i<256; i++)
+  {
+    bits[i]  =  bits[i/2] + (i%2);
+    hashes_used  +=  bits[i] * count[i];
+  }
+
+  *entropy = double(hashes_used)*STEP*FILTER / bufsize;
 }
 
 
