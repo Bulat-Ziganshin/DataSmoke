@@ -1,4 +1,13 @@
 DataSmoke
 =========
 
-Datatype detection in order to choose appropriate compression algorithm
+Datatype detection in order to choose appropriate compression algorithm.
+
+Since compressed, text and multimedia files are better comperssed with specific algorithms, we need a fast and reliable way to detect those data. I call it data smoking.
+
+This project will provide various experimental algorithms that can recognize some of special datatypes (not necessary all), as well as samples of data that are especially hard to smoke correctly.
+
+
+The full list of algorithms:
+
+ByteDistribution: computes entropy of individual bytes.
