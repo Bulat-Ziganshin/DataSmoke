@@ -19,9 +19,9 @@ public:
 //  ~Distribution();
 };
 
-/**********************************************************************/
-/* Byte distribution                                                  */
-/**********************************************************************/
+/*************************************************************************/
+/* Byte distribution: calculate compression ratio with the order-0 model */
+/*************************************************************************/
 
 class ByteDistribution : public Distribution
 {
@@ -45,7 +45,6 @@ void ByteDistribution::smoke (void *buf, size_t bufsize, double *entropy)
     count3[ p[i+2] ]++,
     count4[ p[i+3] ]++;
 
-  // Calculate compression ratio with the order-0 model
   double order0 = 0;
   for (int i=0; i<256; i++)
   {
@@ -102,7 +101,7 @@ int main (int argc, char **argv)
   FILE *infile  = fopen (argv[argc>2?2:1], "rb");  if (infile==NULL)  {fprintf (stderr, "Can't open input file %s!\n",    argv[argc>2?2:1]); return EXIT_FAILURE;}
 
   ByteDistribution ByteD;
-  double entropy;
+  double entropy,  min_entropy = 1,  avg_entropy = 0;
   uint64_t origsize = 0;
 
   for(;;)
@@ -116,12 +115,16 @@ int main (int argc, char **argv)
 
     for (int i=0; i<repetitions; i++)
       ByteD.smoke(buf, buf_bytes, &entropy);
-    printf("%.2lf%%\n", entropy*100);
+
+    if (entropy < min_entropy)
+      min_entropy = entropy;
+    avg_entropy += entropy*buf_bytes;
 
     origsize += buf_bytes;
   }
 
   char temp1[100], temp2[100];
   fprintf(stderr, "Processed %s bytes\n", show3(origsize,temp1));
+  fprintf(stderr, "ByteDistribution entropy: minimum %.2lf, average %.2lf\n", min_entropy*100, avg_entropy/origsize*100);
   return EXIT_SUCCESS;
 }
