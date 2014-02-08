@@ -38,12 +38,14 @@ void ByteDistribution::smoke (void *buf, size_t bufsize, double *entropy)
   size_t count3[256] = {0};
   size_t count4[256] = {0};
 
-  byte *p = (byte*) buf;
-  for (int i=0; i<bufsize; i+=4)
+  byte *p = (byte*) buf;  int i;
+  for (i=0; i<bufsize-3; i+=4)
     count1[ p[i]   ]++,
     count2[ p[i+1] ]++,
     count3[ p[i+2] ]++,
     count4[ p[i+3] ]++;
+  for (; i<bufsize; i++)
+    count1[ p[i]   ]++;
 
   double order0 = 0;
   for (int i=0; i<256; i++)
@@ -125,6 +127,6 @@ int main (int argc, char **argv)
 
   char temp1[100], temp2[100];
   fprintf(stderr, "Processed %s bytes\n", show3(origsize,temp1));
-  fprintf(stderr, "ByteDistribution entropy: minimum %.2lf, average %.2lf\n", min_entropy*100, avg_entropy/origsize*100);
+  fprintf(stderr, "ByteDistribution entropy: minimum %.2lf%%, average %.2lf%%\n", min_entropy*100, avg_entropy/origsize*100);
   return EXIT_SUCCESS;
 }
