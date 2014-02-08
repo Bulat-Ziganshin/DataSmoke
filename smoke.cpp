@@ -33,17 +33,26 @@ public:
 
 void ByteDistribution::smoke (void *buf, size_t bufsize, double *entropy)
 {
-  size_t count[256] = {0};
+  size_t count1[256] = {0};
+  size_t count2[256] = {0};
+  size_t count3[256] = {0};
+  size_t count4[256] = {0};
 
   byte *p = (byte*) buf;
-  for (int i=0; i<bufsize; i++)
-    count[p[i]]++;
+  for (int i=0; i<bufsize; i+=4)
+    count1[ p[i]   ]++,
+    count2[ p[i+1] ]++,
+    count3[ p[i+2] ]++,
+    count4[ p[i+3] ]++;
 
   // Calculate compression ratio with the order-0 model
   double order0 = 0;
   for (int i=0; i<256; i++)
-    if (count[i])
-      order0 += count[i] * log(double(bufsize/count[i]))/log(double(2)) / 8;
+  {
+    size_t count  =  count1[i] + count2[i] + count3[i] + count4[i];
+    if (count)
+      order0 += count * log(double(bufsize/count))/log(double(2)) / 8;
+  }
 
   *entropy = order0 / bufsize;
 }
@@ -107,7 +116,7 @@ int main (int argc, char **argv)
 
     for (int i=0; i<repetitions; i++)
       ByteD.smoke(buf, buf_bytes, &entropy);
-    //printf("%.2lf%%\n", entropy*100);
+    printf("%.2lf%%\n", entropy*100);
 
     origsize += buf_bytes;
   }
