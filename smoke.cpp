@@ -15,6 +15,7 @@ typedef unsigned char byte;
 class Smoker
 {
 public:
+  virtual const char* name() = 0;
   virtual void smoke (void *buf, size_t bufsize, double *entropy) = 0;
   virtual ~Smoker() {}
 };
@@ -26,6 +27,7 @@ public:
 class ByteSmoker : public Smoker
 {
 public:
+  virtual const char* name()  {return "ByteSmoker";};
   virtual void smoke (void *buf, size_t bufsize, double *entropy);
 };
 
@@ -75,6 +77,7 @@ class DWordSmoker : public Smoker
   byte table[HASHSIZE];
 public:
   DWordSmoker();
+  virtual const char* name()  {return "DWordSmoker";};
   virtual void smoke (void *buf, size_t bufsize, double *entropy);
   virtual ~DWordSmoker() {}
 };
@@ -88,9 +91,9 @@ DWordSmoker::DWordSmoker()
 
 void DWordSmoker::smoke (void *buf, size_t bufsize, double *entropy)
 {
-  const size_t   STEP = 4;         // Check every n'th position
-  const uint32_t FILTER = 16;      // Of checked, count every n'th hash
-  const uint32_t MAX_HASH = (1u<<31) / (FILTER/2);
+  const size_t   STEP = 4;         // Check only every n'th position
+  const uint32_t FILTER = 16;      // Of those checked, count only every n'th hash
+  const uint32_t MAX_HASH = (1u<<31) / (FILTER/2);  // Count only hashes smaller than this value
 
   memset(table,0,HASHSIZE);
   byte *p = (byte*) buf;
@@ -134,19 +137,22 @@ int main (int argc, char **argv)
 {
   fprintf(stderr, "DataSmoker 0.1. ");
 
-  int repetitions = argc>2? atoi(argv[1]) : 1;  // Repeat detection many times in order to get precise times
   if (argc==1)
   {
-    fprintf(stderr, "\n\nUsage: smoke [N] infile\n\nN is a number of repetitions for precise timing\n\n%s", copyright);
+    fprintf(stderr, "\n\nUsage: smoke infile\n\n%s", copyright);
     return EXIT_FAILURE;
   }
 
-  FILE *infile  = fopen (argv[argc>2?2:1], "rb");  if (infile==NULL)  {fprintf (stderr, "Can't open input file %s!\n",    argv[argc>2?2:1]); return EXIT_FAILURE;}
+  FILE *infile  = fopen (argv[1], "rb");  if (infile==NULL)  {fprintf (stderr, "Can't open input file %s!\n",    argv[1]); return EXIT_FAILURE;}
 
-  ByteSmoker ByteD;
-  double entropy,  min_entropy = 1,  avg_entropy = 0;
+  ByteSmoker  ByteS;
+  DWordSmoker DWordS;
+  Smoker *smokers[] = {&ByteS, &DWordS};
+  const int NumSmokers = sizeof(smokers)/sizeof(*smokers);
+  double entropy,  min_entropy[NumSmokers],  avg_entropy[NumSmokers] = {0};
+  for (int i=0; i<NumSmokers; ++i)  min_entropy[i] = 1;
+
   uint64_t origsize = 0;
-
   for(;;)
   {
     int buf_bytes;
@@ -156,18 +162,19 @@ int main (int argc, char **argv)
     buf_bytes = fread(buf, 1, BUFSIZE, infile);
     if (buf_bytes==0) break;
 
-    for (int i=0; i<repetitions; i++)
-      ByteD.smoke(buf, buf_bytes, &entropy);
-
-    if (entropy < min_entropy)
-      min_entropy = entropy;
-    avg_entropy += entropy*buf_bytes;
+    for (int i=0; i<NumSmokers; i++)
+    {
+      smokers[i]->smoke(buf, buf_bytes, &entropy);
+      if (entropy < min_entropy[i])
+        min_entropy[i] = entropy;
+      avg_entropy[i] += entropy*buf_bytes;
+  }
 
     origsize += buf_bytes;
   }
 
-  char temp1[100], temp2[100];
-  fprintf(stderr, "Processed %s bytes\n", show3(origsize,temp1));
-  fprintf(stderr, "ByteSmoker entropy: minimum %.2lf%%, average %.2lf%%\n", min_entropy*100, avg_entropy/origsize*100);
+  char temp1[100];  fprintf(stderr, "Processed %s bytes\n", show3(origsize,temp1));
+  for (int i=0; i<NumSmokers; i++)
+    fprintf(stderr, "%s entropy: minimum %.2lf%%, average %.2lf%%\n", smokers[i]->name(), min_entropy[i]*100, avg_entropy[i]/origsize*100);
   return EXIT_SUCCESS;
 }
