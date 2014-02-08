@@ -13,3 +13,5 @@
 *.a
 
 *.exe
+*.sublime-project
+*.sublime-workspace

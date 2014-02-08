@@ -11,3 +11,5 @@ This project will provide various experimental algorithms that can recognize som
 The full list of algorithms:
 
 ByteDistribution: computes entropy of individual bytes.
+WordDistribution: computes entropy of 16-bit words.
+DWordDistribution: computes entropy of 32-bit dwords.
