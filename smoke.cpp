@@ -19,14 +19,14 @@ class Smoker
 {
 public:
   virtual const char* name() = 0;
-  virtual void smoke (void *buf, size_t bufsize, double *entropy) = 0;
   virtual ~Smoker() {}
+  virtual void smoke (void *buf, size_t bufsize, double *entropy) = 0;
 };
 
 
-/**********************************************************************/
-/* Byte smoker: calculate compression ratio with the order-0 model    */
-/**********************************************************************/
+/*************************************************************************/
+/* Byte smoker: calculate compression ratio with the 8-bit order-0 model */
+/************************************************************************/
 
 class ByteSmoker : public Smoker
 {
@@ -63,34 +63,35 @@ void ByteSmoker::smoke (void *buf, size_t bufsize, double *entropy)
 }
 
 
-/**********************************************************************/
-/* DWord smoker                                                       */
-/**********************************************************************/
-
-uint32_t hash_function (uint32_t x)
-{
-  uint64_t hash  =  x * uint64_t(123456791u);
-  return uint32_t(hash>>32) ^ uint32_t(hash);
-}
+/***************************************************************************/
+/* DWord smoker: calculate compression ratio with the 32-bit order-0 model */
+/***************************************************************************/
 
 const size_t HASHSIZE = 128*kb;
 
 class DWordSmoker : public Smoker
 {
+  byte *table;
   size_t bits[256];
-  byte table[HASHSIZE];
 public:
   DWordSmoker();
   virtual const char* name()  {return "DWordSmoker";};
+  virtual ~DWordSmoker()      {delete[] table;}
   virtual void smoke (void *buf, size_t bufsize, double *entropy);
-  virtual ~DWordSmoker() {}
 };
 
 DWordSmoker::DWordSmoker()
 {
+  table = new byte[HASHSIZE];
   bits[0] = 0;
   for (int i=1; i<256; i++)
     bits[i]  =  bits[i/2] + (i%2);
+}
+
+uint32_t hash_function (uint32_t x)
+{
+  uint64_t hash  =  x * uint64_t(123456791u);
+  return uint32_t(hash>>32) ^ uint32_t(hash);
 }
 
 void DWordSmoker::smoke (void *buf, size_t bufsize, double *entropy)
