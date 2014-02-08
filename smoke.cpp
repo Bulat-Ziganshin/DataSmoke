@@ -70,7 +70,6 @@ void ByteSmoker::smoke (void *buf, size_t bufsize, double *entropy)
 class WordSmoker : public Smoker
 {
   uint32_t *count;
-  size_t bits[256];
 public:
   WordSmoker()                {count = new uint32_t[256*256];}
   virtual const char* name()  {return "WordSmoker";};
@@ -84,7 +83,7 @@ void WordSmoker::smoke (void *buf, size_t bufsize, double *entropy)
 
   byte *p = (byte*) buf;
   for (int i=0; i<bufsize-1; i++)
-    count[ *(uint16_t*)(p+i) ]++;
+    count[ *(unsigned*)(p+i) & 0xFFFF ]++;
 
   double order0 = 0;
   for (int i=0; i<256*256; i++)
@@ -94,6 +93,45 @@ void WordSmoker::smoke (void *buf, size_t bufsize, double *entropy)
   }
 
   *entropy  =  order0 / bufsize;
+}
+
+
+/****************************************************************************/
+/* Order-1 smoker: calculate compression ratio with the 8-bit order-1 model */
+/****************************************************************************/
+
+class Order1Smoker : public Smoker
+{
+  uint32_t *count;
+public:
+  Order1Smoker()              {count = new uint32_t[256*256];}
+  virtual const char* name()  {return "Order1Smoker";};
+  virtual ~Order1Smoker()     {delete[] count;}
+  virtual void smoke (void *buf, size_t bufsize, double *entropy);
+};
+
+void Order1Smoker::smoke (void *buf, size_t bufsize, double *entropy)
+{
+  memset (count, 0, 256*256*sizeof(*count));
+
+  byte *p = (byte*) buf;
+  for (int i=0; i<bufsize-1; i++)
+    count[ *(unsigned*)(p+i) & 0xFFFF ]++;
+
+  double order1 = 0;
+  for (int i=0; i<256; i++)
+  {
+    size_t total = 0;
+    for (int j=0; j<256; j++)
+      total += count[i*256+j];
+
+    if (total)
+      for (int j=0; j<256; j++)
+        if (count[i*256+j])
+          order1 += count[i*256+j] * log(double(total)/count[i*256+j])/log(double(2)) / 8;
+  }
+
+  *entropy  =  order1 / bufsize;
 }
 
 
@@ -187,10 +225,11 @@ int main (int argc, char **argv)
     FILE *infile  = fopen (argv[file], "rb");  if (infile==NULL)  {fprintf (stderr, "Can't open input file %s!\n",    argv[file]); return EXIT_FAILURE;}
     fprintf(stderr, "%sProcessing %s: ", file>1?"\n":"", argv[file]);
 
-    ByteSmoker  ByteS;
-    WordSmoker  WordS;
-    DWordSmoker DWordS;
-    Smoker *smokers[] = {&ByteS, &WordS, &DWordS};
+    ByteSmoker   ByteS;
+    WordSmoker   WordS;
+    DWordSmoker  DWordS;
+    Order1Smoker Order1S;
+    Smoker *smokers[] = {&ByteS, &WordS, &Order1S, &DWordS};
     const int NumSmokers = sizeof(smokers)/sizeof(*smokers);
     double entropy,  min_entropy[NumSmokers],  avg_entropy[NumSmokers] = {0},  max_entropy[NumSmokers] = {0};
     for (int i=0; i<NumSmokers; ++i)  min_entropy[i] = 1;
