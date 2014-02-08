@@ -12,24 +12,24 @@ char copyright[] = "Developed by Bulat Ziganshin\n"
 #define mb (kb*kb)
 typedef unsigned char byte;
 
-class Distribution
+class Smoker
 {
 public:
   virtual void smoke (void *buf, size_t bufsize, double *entropy) = 0;
-  virtual ~Distribution();
+  virtual ~Smoker();
 };
 
-/*************************************************************************/
-/* Byte distribution: calculate compression ratio with the order-0 model */
-/*************************************************************************/
+/**********************************************************************/
+/* Byte smoker: calculate compression ratio with the order-0 model    */
+/**********************************************************************/
 
-class ByteDistribution : public Distribution
+class ByteSmoker : public Smoker
 {
 public:
   virtual void smoke (void *buf, size_t bufsize, double *entropy);
 };
 
-void ByteDistribution::smoke (void *buf, size_t bufsize, double *entropy)
+void ByteSmoker::smoke (void *buf, size_t bufsize, double *entropy)
 {
   size_t count1[256] = {0};
   size_t count2[256] = {0};
@@ -58,7 +58,7 @@ void ByteDistribution::smoke (void *buf, size_t bufsize, double *entropy)
 
 
 /**********************************************************************/
-/* DWord distribution                                                 */
+/* DWord smoker                                                       */
 /**********************************************************************/
 
 uint32_t hash_function (uint32_t x)
@@ -69,15 +69,15 @@ uint32_t hash_function (uint32_t x)
 
 const size_t HASHSIZE = 128*kb;
 
-class DWordDistribution : public Distribution
+class DWordSmoker : public Smoker
 {
   byte table[HASHSIZE];
 public:
   virtual void smoke (void *buf, size_t bufsize, double *entropy);
-  virtual ~DWordDistribution() {}
+  virtual ~DWordSmoker() {}
 };
 
-void DWordDistribution::smoke (void *buf, size_t bufsize, double *entropy)
+void DWordSmoker::smoke (void *buf, size_t bufsize, double *entropy)
 {
   const size_t   STEP = 4;         // Check every n'th position
   const uint32_t FILTER = 16;      // Of checked, count every n'th hash
@@ -103,7 +103,8 @@ void DWordDistribution::smoke (void *buf, size_t bufsize, double *entropy)
     hashes_used  +=  bits[i] * count[i];
   }
 
-  *entropy = double(hashes_used)*STEP*FILTER / bufsize;
+  // We have checked bufsize/(STEP*FILTER) hashes and found hashes_used original values among them
+  *entropy = hashes_used / (double(bufsize)/(STEP*FILTER));
 }
 
 
@@ -140,7 +141,7 @@ int main (int argc, char **argv)
 
   FILE *infile  = fopen (argv[argc>2?2:1], "rb");  if (infile==NULL)  {fprintf (stderr, "Can't open input file %s!\n",    argv[argc>2?2:1]); return EXIT_FAILURE;}
 
-  ByteDistribution ByteD;
+  ByteSmoker ByteD;
   double entropy,  min_entropy = 1,  avg_entropy = 0;
   uint64_t origsize = 0;
 
@@ -165,6 +166,6 @@ int main (int argc, char **argv)
 
   char temp1[100], temp2[100];
   fprintf(stderr, "Processed %s bytes\n", show3(origsize,temp1));
-  fprintf(stderr, "ByteDistribution entropy: minimum %.2lf%%, average %.2lf%%\n", min_entropy*100, avg_entropy/origsize*100);
+  fprintf(stderr, "ByteSmoker entropy: minimum %.2lf%%, average %.2lf%%\n", min_entropy*100, avg_entropy/origsize*100);
   return EXIT_SUCCESS;
 }
