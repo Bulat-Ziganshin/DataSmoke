@@ -1,3 +1,5 @@
+char version[] = "DataSmoker 0.1  2014-02-08";
+
 char copyright[] = "Developed by Bulat Ziganshin\n"
                    "The code is placed in public domain\n";
 
@@ -87,7 +89,7 @@ public:
 DWordSmoker::DWordSmoker()
 {
   bits[0] = 0;
-  for (int i=0; i<256; i++)
+  for (int i=1; i<256; i++)
     bits[i]  =  bits[i/2] + (i%2);
 }
 
@@ -138,48 +140,53 @@ static char* show3 (uint64_t n, char *buf, const char *prepend="")
 
 int main (int argc, char **argv)
 {
-  fprintf(stderr, "DataSmoker 0.1. ");
-
   if (argc==1)
   {
-    fprintf(stderr, "\n\nUsage: smoke infile\n\n%s", copyright);
+    fprintf(stderr, version);
+    fprintf(stderr, "\n\nUsage: smoke infiles...\n\n%s", copyright);
     return EXIT_FAILURE;
   }
 
-  FILE *infile  = fopen (argv[1], "rb");  if (infile==NULL)  {fprintf (stderr, "Can't open input file %s!\n",    argv[1]); return EXIT_FAILURE;}
-
-  ByteSmoker  ByteS;
-  DWordSmoker DWordS;
-  Smoker *smokers[] = {&ByteS, &DWordS};
-  const int NumSmokers = sizeof(smokers)/sizeof(*smokers);
-  double entropy,  min_entropy[NumSmokers],  avg_entropy[NumSmokers] = {0},  max_entropy[NumSmokers] = {0};
-  for (int i=0; i<NumSmokers; ++i)  min_entropy[i] = 1;
-
-  uint64_t origsize = 0;
-  for(;;)
+  for (int file=1; file < argc; file++)
   {
-    int buf_bytes;
-    const int BUFSIZE = 4*mb;
-    static char buf[BUFSIZE];
+    FILE *infile  = fopen (argv[file], "rb");  if (infile==NULL)  {fprintf (stderr, "Can't open input file %s!\n",    argv[file]); return EXIT_FAILURE;}
+    fprintf(stderr, "%sProcessing %s: ", file>1?"\n":"", argv[file]);
 
-    buf_bytes = fread(buf, 1, BUFSIZE, infile);
-    if (buf_bytes==0) break;
+    ByteSmoker  ByteS;
+    DWordSmoker DWordS;
+    Smoker *smokers[] = {&ByteS, &DWordS};
+    const int NumSmokers = sizeof(smokers)/sizeof(*smokers);
+    double entropy,  min_entropy[NumSmokers],  avg_entropy[NumSmokers] = {0},  max_entropy[NumSmokers] = {0};
+    for (int i=0; i<NumSmokers; ++i)  min_entropy[i] = 1;
 
-    for (int i=0; i<NumSmokers; i++)
+    uint64_t origsize = 0;
+    for(;;)
     {
-      smokers[i]->smoke(buf, buf_bytes, &entropy);
-      if (entropy < min_entropy[i])
-        min_entropy[i] = entropy;
-      if (entropy > max_entropy[i])
-        max_entropy[i] = entropy;
-      avg_entropy[i] += entropy*buf_bytes;
+      int buf_bytes;
+      const int BUFSIZE = 4*mb;
+      static char buf[BUFSIZE];
+
+      buf_bytes = fread(buf, 1, BUFSIZE, infile);
+      if (buf_bytes==0) break;
+
+      for (int i=0; i<NumSmokers; i++)
+      {
+        smokers[i]->smoke(buf, buf_bytes, &entropy);
+        if (entropy < min_entropy[i])
+          min_entropy[i] = entropy;
+        if (entropy > max_entropy[i])
+          max_entropy[i] = entropy;
+        avg_entropy[i] += entropy*buf_bytes;
+      }
+
+      origsize += buf_bytes;
+    }
+    fclose(infile);
+
+    char temp1[100];  fprintf(stderr, "%s bytes\n", show3(origsize,temp1));
+    for (int i=0; i<NumSmokers; i++)
+      fprintf(stderr, "  %s entropy: minimum %.2lf%%, average %.2lf%%, maximum %.2lf%%\n", smokers[i]->name(), min_entropy[i]*100, avg_entropy[i]/origsize*100, max_entropy[i]*100);
   }
 
-    origsize += buf_bytes;
-  }
-
-  char temp1[100];  fprintf(stderr, "Processed %s bytes\n", show3(origsize,temp1));
-  for (int i=0; i<NumSmokers; i++)
-    fprintf(stderr, "%s entropy: minimum %.2lf%%, average %.2lf%%, maximum %.2lf%%\n", smokers[i]->name(), min_entropy[i]*100, avg_entropy[i]/origsize*100, max_entropy[i]*100);
   return EXIT_SUCCESS;
 }
