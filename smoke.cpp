@@ -215,7 +215,7 @@ int main (int argc, char **argv)
 {
   if (argc==1)
   {
-    fprintf(stderr, version);
+    fprintf(stderr, "%s", version);
     fprintf(stderr, "\n\nUsage: smoke infiles...\n\n%s", copyright);
     return EXIT_FAILURE;
   }
