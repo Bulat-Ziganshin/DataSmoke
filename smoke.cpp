@@ -15,27 +15,27 @@ char copyright[] = "Developed by Bulat Ziganshin\n"
 #define mb (kb*kb)
 typedef unsigned char byte;
 
-class Smoker
+class Entropy
 {
 public:
   virtual const char* name() = 0;
-  virtual ~Smoker() {}
+  virtual ~Entropy() {}
   virtual void smoke (void *buf, size_t bufsize, double *entropy) = 0;
 };
 
 
-/*************************************************************************/
-/* Byte smoker: calculate compression ratio with the 8-bit order-0 model */
-/************************************************************************/
+/**************************************************************************/
+/* Byte entropy: calculate compression ratio with the 8-bit order-0 model */
+/**************************************************************************/
 
-class ByteSmoker : public Smoker
+class ByteEntropy : public Entropy
 {
 public:
   virtual const char* name()  {return "Byte entropy";};
   virtual void smoke (void *buf, size_t bufsize, double *entropy);
 };
 
-void ByteSmoker::smoke (void *buf, size_t bufsize, double *entropy)
+void ByteEntropy::smoke (void *buf, size_t bufsize, double *entropy)
 {
   size_t count1[256] = {0};
   size_t count2[256] = {0};
@@ -63,21 +63,21 @@ void ByteSmoker::smoke (void *buf, size_t bufsize, double *entropy)
 }
 
 
-/**************************************************************************/
-/* Word smoker: calculate compression ratio with the 16-bit order-0 model */
-/**************************************************************************/
+/***************************************************************************/
+/* Word entropy: calculate compression ratio with the 16-bit order-0 model */
+/***************************************************************************/
 
-class WordSmoker : public Smoker
+class WordEntropy : public Entropy
 {
   uint32_t *count;
 public:
-  WordSmoker()                {count = new uint32_t[256*256];}
+  WordEntropy()               {count = new uint32_t[256*256];}
   virtual const char* name()  {return "Word entropy";};
-  virtual ~WordSmoker()       {delete[] count;}
+  virtual ~WordEntropy()      {delete[] count;}
   virtual void smoke (void *buf, size_t bufsize, double *entropy);
 };
 
-void WordSmoker::smoke (void *buf, size_t bufsize, double *entropy)
+void WordEntropy::smoke (void *buf, size_t bufsize, double *entropy)
 {
   memset (count, 0, 256*256*sizeof(*count));
 
@@ -96,21 +96,21 @@ void WordSmoker::smoke (void *buf, size_t bufsize, double *entropy)
 }
 
 
-/****************************************************************************/
-/* Order-1 smoker: calculate compression ratio with the 8-bit order-1 model */
-/****************************************************************************/
+/**********************************************************************************/
+/* Order-1 byte entropy: calculate compression ratio with the 8-bit order-1 model */
+/**********************************************************************************/
 
-class Order1Smoker : public Smoker
+class Order1Entropy : public Entropy
 {
   uint32_t *count;
 public:
-  Order1Smoker()              {count = new uint32_t[256*256];}
+  Order1Entropy()             {count = new uint32_t[256*256];}
   virtual const char* name()  {return "Order-1 byte entropy";};
-  virtual ~Order1Smoker()     {delete[] count;}
+  virtual ~Order1Entropy()    {delete[] count;}
   virtual void smoke (void *buf, size_t bufsize, double *entropy);
 };
 
-void Order1Smoker::smoke (void *buf, size_t bufsize, double *entropy)
+void Order1Entropy::smoke (void *buf, size_t bufsize, double *entropy)
 {
   memset (count, 0, 256*256*sizeof(*count));
 
@@ -136,23 +136,23 @@ void Order1Smoker::smoke (void *buf, size_t bufsize, double *entropy)
 
 
 /***************************************************************************/
-/* DWord smoker: calculate compression ratio with the 32-bit order-0 model */
+/* DWord coverage: calculate that part of 32-bit dwords are unique         */
 /***************************************************************************/
 
 const size_t HASHSIZE = 128*kb;
 
-class DWordSmoker : public Smoker
+class DWordCoverage : public Entropy
 {
   byte *table;
   size_t bits[256];
 public:
-  DWordSmoker();
+  DWordCoverage();
   virtual const char* name()  {return "DWord coverage";};
-  virtual ~DWordSmoker()      {delete[] table;}
+  virtual ~DWordCoverage()    {delete[] table;}
   virtual void smoke (void *buf, size_t bufsize, double *entropy);
 };
 
-DWordSmoker::DWordSmoker()
+DWordCoverage::DWordCoverage()
 {
   table = new byte[HASHSIZE];
   bits[0] = 0;
@@ -166,7 +166,7 @@ uint32_t hash_function (uint32_t x)
   return uint32_t(hash>>32) ^ uint32_t(hash);
 }
 
-void DWordSmoker::smoke (void *buf, size_t bufsize, double *entropy)
+void DWordCoverage::smoke (void *buf, size_t bufsize, double *entropy)
 {
   const size_t   STEP = 4;        // Check only every n'th position
   const uint32_t FILTER = 16;     // Of those checked, count only every n'th hash
@@ -228,11 +228,11 @@ int main (int argc, char **argv)
     FILE *infile  = fopen (argv[file], "rb");  if (infile==NULL)  {printf("Can't open input file %s!\n",    argv[file]); return EXIT_FAILURE;}
     printf("%sProcessing %s in %dMB blocks: ", file>1?"\n":"", argv[file], BUFSIZE/mb);
 
-    ByteSmoker   ByteS;
-    WordSmoker   WordS;
-    DWordSmoker  DWordS;
-    Order1Smoker Order1S;
-    Smoker *smokers[] = {&ByteS, &WordS, &Order1S, &DWordS};
+    ByteEntropy   ByteS;
+    WordEntropy   WordS;
+    DWordCoverage DWordS;
+    Order1Entropy Order1S;
+    Entropy *smokers[] = {&ByteS, &WordS, &Order1S, &DWordS};
     const int NumSmokers = sizeof(smokers)/sizeof(*smokers);
     double entropy, min_entropy[NumSmokers], avg_entropy[NumSmokers], max_entropy[NumSmokers];
 

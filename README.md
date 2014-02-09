@@ -9,7 +9,7 @@ The full list of smells (speeds measured on the single core of i7-4770) and thei
 - ByteSmoker: computes entropy of independent bytes (2 GB/s). Minimum recommended block is 4 KBytes.
 - WordSmoker: computes entropy of independent 16-bit words (0.7-1.5 GB/s). Minimum recommended block is 1 MBytes.
 - Order1Smoker: computes order-1 entropy of bytes (0.7-1.5 GB/s). Minimum recommended block is 1 MBytes.
-- DWordSmoker: computes coverage of independent 32-bit dwords (3 GB/s). Minimum recommended block is STEP*FILTER Kbytes.
+- DWordSmoker: computes coverage of independent 32-bit dwords (3 GB/s). Minimum recommended block is STEP*FILTER Kbytes (default STEP=4, FILTER=16).
 
 
 And examples of their work:
