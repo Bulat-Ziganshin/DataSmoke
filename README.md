@@ -1,7 +1,9 @@
 DataSmoke
 =========
 
-Datatype detection in order to choose appropriate compression algorithm or not compress at all. Since text, multimedia and incompresible files are better processed with specific algorithms, we need a fast and reliable way to detect those data. I call it data smoking. This project will provide various experimental algorithms that can recognize some of special datatypes (not necessary all), as well as samples of data that are especially hard to smoke correctly.
+Datatype detection in order to choose appropriate compression algorithm or not compress at all. 
+
+Since text, multimedia and incompresible files are better processed with specific algorithms, we need a fast and reliable way to detect those data. I call it data smoking. This project will provide various experimental algorithms that can recognize some of special datatypes (not necessary all), as well as samples of data that are especially hard to smoke correctly.
 
 
 The full list of smells (speeds measured on the single core of i7-4770) and minimum recommended block sizes to provide meaningful results:
