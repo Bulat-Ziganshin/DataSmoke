@@ -222,8 +222,11 @@ int main (int argc, char **argv)
 
   for (int file=1; file < argc; file++)
   {
+    const int BUFSIZE = 4*mb;
+    static char buf[BUFSIZE];
+
     FILE *infile  = fopen (argv[file], "rb");  if (infile==NULL)  {printf("Can't open input file %s!\n",    argv[file]); return EXIT_FAILURE;}
-    printf("%sProcessing %s: ", file>1?"\n":"", argv[file]);
+    printf("%sProcessing %s in %dMB blocks: ", file>1?"\n":"", argv[file], BUFSIZE/mb);
 
     ByteSmoker   ByteS;
     WordSmoker   WordS;
@@ -231,30 +234,30 @@ int main (int argc, char **argv)
     Order1Smoker Order1S;
     Smoker *smokers[] = {&ByteS, &WordS, &Order1S, &DWordS};
     const int NumSmokers = sizeof(smokers)/sizeof(*smokers);
-    double entropy,  min_entropy[NumSmokers],  avg_entropy[NumSmokers] = {0},  max_entropy[NumSmokers] = {0};
-    for (int i=0; i<NumSmokers; ++i)  min_entropy[i] = 1;
+    double entropy, min_entropy[NumSmokers], avg_entropy[NumSmokers], max_entropy[NumSmokers];
 
     uint64_t origsize = 0;
     for(;;)
     {
-      int buf_bytes;
-      const int BUFSIZE = 4*mb;
-      static char buf[BUFSIZE];
-
-      buf_bytes = fread(buf, 1, BUFSIZE, infile);
-      if (buf_bytes==0) break;
+      int bytes_read = fread(buf, 1, BUFSIZE, infile);
+      if (bytes_read==0) break;
 
       for (int i=0; i<NumSmokers; i++)
       {
-        smokers[i]->smoke(buf, buf_bytes, &entropy);
-        if (entropy < min_entropy[i])
-          min_entropy[i] = entropy;
-        if (entropy > max_entropy[i])
-          max_entropy[i] = entropy;
-        avg_entropy[i] += entropy*buf_bytes;
+        smokers[i]->smoke(buf, bytes_read, &entropy);
+        if (origsize==0) {                 // first block
+          min_entropy[i] = max_entropy[i] = entropy;
+          avg_entropy[i] = 0;
+        } else if (bytes_read==BUFSIZE) {  // update min/max entropy only on complete blocks
+          if (entropy < min_entropy[i])
+            min_entropy[i] = entropy;
+          if (entropy > max_entropy[i])
+            max_entropy[i] = entropy;
+        }
+        avg_entropy[i] += entropy*bytes_read;
       }
 
-      origsize += buf_bytes;
+      origsize += bytes_read;
     }
     fclose(infile);
 
