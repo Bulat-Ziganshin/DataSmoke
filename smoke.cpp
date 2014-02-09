@@ -229,7 +229,8 @@ int main (int argc, char **argv)
     static char buf[BUFSIZE];
 
     FILE *infile  = fopen (argv[file], "rb");  if (infile==NULL)  {printf("Can't open input file %s!\n",    argv[file]); return EXIT_FAILURE;}
-    printf("%sProcessing %s in %dMB blocks: ", file>1?"\n":"", argv[file], BUFSIZE/mb);
+    int width = strlen(argv[file]);  width = width>20? width : 20;
+    printf("%s%*s | min %% | avg %% | max %% | incompressible %dMB blocks", file>1?"\n":"", width, argv[file], BUFSIZE/mb);
 
     ByteEntropy   ByteS;
     WordEntropy   WordS;
@@ -265,9 +266,11 @@ int main (int argc, char **argv)
     }
     fclose(infile);
 
-    char temp1[100];  printf("%s bytes\n", show3(origsize,temp1));
+//    char temp1[100];  printf("%s bytes\n", show3(origsize,temp1));
+    printf("\n");  for(int i=0; i<width; i++) printf("-");
+    printf("-|-------|-------|-------|----------------------------\n");
     for (int i=0; i<NumSmokers; i++)
-      printf("  %20s:  min%6.2lf%%, avg%6.2lf%%, max%6.2lf%%;  %d of %d blocks are incompressible\n", smokers[i]->name(), min_entropy[i]*100, avg_entropy[i]/origsize*100, max_entropy[i]*100, incompressible[i], blocks);
+      printf("%*s |%6.2lf |%6.2lf |%6.2lf | %d of %d\n", width, smokers[i]->name(), min_entropy[i]*100, avg_entropy[i]/origsize*100, max_entropy[i]*100, incompressible[i], blocks);
   }
 
   return EXIT_SUCCESS;
