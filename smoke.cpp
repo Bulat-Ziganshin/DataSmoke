@@ -1,4 +1,4 @@
-char version[] = "DataSmoker 0.1  2014-02-08";
+char version[] = "DataSmoker 0.2  2014-02-09";
 
 char copyright[] = "Developed by Bulat Ziganshin\n"
                    "The code is placed in public domain\n";
@@ -215,15 +215,15 @@ int main (int argc, char **argv)
 {
   if (argc==1)
   {
-    fprintf(stderr, "%s", version);
-    fprintf(stderr, "\n\nUsage: smoke infiles...\n\n%s", copyright);
+    printf("%s", version);
+    printf("\n\nUsage: smoke infiles...\n\n%s", copyright);
     return EXIT_FAILURE;
   }
 
   for (int file=1; file < argc; file++)
   {
-    FILE *infile  = fopen (argv[file], "rb");  if (infile==NULL)  {fprintf (stderr, "Can't open input file %s!\n",    argv[file]); return EXIT_FAILURE;}
-    fprintf(stderr, "%sProcessing %s: ", file>1?"\n":"", argv[file]);
+    FILE *infile  = fopen (argv[file], "rb");  if (infile==NULL)  {printf("Can't open input file %s!\n",    argv[file]); return EXIT_FAILURE;}
+    printf("%sProcessing %s: ", file>1?"\n":"", argv[file]);
 
     ByteSmoker   ByteS;
     WordSmoker   WordS;
@@ -258,9 +258,9 @@ int main (int argc, char **argv)
     }
     fclose(infile);
 
-    char temp1[100];  fprintf(stderr, "%s bytes\n", show3(origsize,temp1));
+    char temp1[100];  printf("%s bytes\n", show3(origsize,temp1));
     for (int i=0; i<NumSmokers; i++)
-      fprintf(stderr, "  %s entropy: minimum %.2lf%%, average %.2lf%%, maximum %.2lf%%\n", smokers[i]->name(), min_entropy[i]*100, avg_entropy[i]/origsize*100, max_entropy[i]*100);
+      printf("  %s entropy: minimum %.2lf%%, average %.2lf%%, maximum %.2lf%%\n", smokers[i]->name(), min_entropy[i]*100, avg_entropy[i]/origsize*100, max_entropy[i]*100);
   }
 
   return EXIT_SUCCESS;
