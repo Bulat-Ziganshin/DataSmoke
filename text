@@ -1,0 +1,29 @@
+Processing D:\Testing\! in 4MB blocks: 20,000,000 bytes
+          Byte entropy:  min 12.50%, avg 12.50%, max 12.50%;  0 of 5 blocks are incompressible
+          Word entropy:  min  6.25%, avg  6.25%, max  6.25%;  0 of 5 blocks are incompressible
+  Order-1 byte entropy:  min  0.00%, avg  0.00%, max  0.00%;  0 of 5 blocks are incompressible
+        DWord coverage:  min -1.#J%, avg -1.#J%, max -1.#J%;  0 of 5 blocks are incompressible
+
+Processing D:\Testing\!text\all-dict+lzp in 4MB blocks: 104,787,706 bytes
+          Byte entropy:  min 69.81%, avg 79.32%, max 86.71%;  0 of 25 blocks are incompressible
+          Word entropy:  min 61.79%, avg 69.31%, max 77.06%;  0 of 25 blocks are incompressible
+  Order-1 byte entropy:  min 53.19%, avg 59.29%, max 69.03%;  0 of 25 blocks are incompressible
+        DWord coverage:  min  7.50%, avg 15.25%, max 39.34%;  0 of 25 blocks are incompressible
+
+Processing D:\Testing\!text\english.100MB in 4MB blocks: 104,857,600 bytes
+          Byte entropy:  min 54.93%, avg 56.65%, max 61.71%;  0 of 25 blocks are incompressible
+          Word entropy:  min 49.34%, avg 50.75%, max 53.43%;  0 of 25 blocks are incompressible
+  Order-1 byte entropy:  min 43.74%, avg 44.85%, max 46.13%;  0 of 25 blocks are incompressible
+        DWord coverage:  min  1.47%, avg  2.53%, max  3.88%;  0 of 25 blocks are incompressible
+
+Processing D:\Testing\!text\rus in 4MB blocks: 30,730,485 bytes
+          Byte entropy:  min 58.66%, avg 61.05%, max 64.51%;  0 of 8 blocks are incompressible
+          Word entropy:  min 52.39%, avg 54.36%, max 56.91%;  0 of 8 blocks are incompressible
+  Order-1 byte entropy:  min 46.10%, avg 47.67%, max 49.31%;  0 of 8 blocks are incompressible
+        DWord coverage:  min  2.51%, avg  3.31%, max  3.96%;  0 of 8 blocks are incompressible
+
+Processing D:\Testing\!text\boost in 4MB blocks: 64,704,870 bytes
+          Byte entropy:  min 62.10%, avg 64.14%, max 67.89%;  0 of 16 blocks are incompressible
+          Word entropy:  min 49.06%, avg 53.46%, max 56.82%;  0 of 16 blocks are incompressible
+  Order-1 byte entropy:  min 36.02%, avg 42.78%, max 48.55%;  0 of 16 blocks are incompressible
+        DWord coverage:  min  1.17%, avg  2.54%, max  4.12%;  0 of 16 blocks are incompressible

@@ -1,0 +1,35 @@
+Processing D:\Testing\Tornado\mdb in 4MB blocks: 57,721,236 bytes
+          Byte entropy:  min 57.85%, avg 63.21%, max 77.19%;  0 of 14 blocks are incompressible
+          Word entropy:  min 46.49%, avg 53.19%, max 68.39%;  0 of 14 blocks are incompressible
+  Order-1 byte entropy:  min 35.12%, avg 43.18%, max 59.58%;  0 of 14 blocks are incompressible
+        DWord coverage:  min  1.79%, avg  3.06%, max  8.33%;  0 of 14 blocks are incompressible
+
+Processing D:\Testing\ghc.dll in 4MB blocks: 328,770,728 bytes
+          Byte entropy:  min 44.95%, avg 63.49%, max 83.73%;  0 of 79 blocks are incompressible
+          Word entropy:  min 37.63%, avg 51.42%, max 74.52%;  0 of 79 blocks are incompressible
+  Order-1 byte entropy:  min 27.44%, avg 39.34%, max 65.30%;  0 of 79 blocks are incompressible
+        DWord coverage:  min  0.43%, avg  3.27%, max 28.49%;  0 of 79 blocks are incompressible
+
+Processing D:\Testing\office.dll in 4MB blocks: 810,411,321 bytes
+          Byte entropy:  min  0.98%, avg 81.93%, max100.00%;  61 of 194 blocks are incompressible
+          Word entropy:  min  0.86%, avg 76.16%, max 99.91%;  54 of 194 blocks are incompressible
+  Order-1 byte entropy:  min  0.73%, avg 70.39%, max 99.83%;  51 of 194 blocks are incompressible
+        DWord coverage:  min  0.02%, avg 37.02%, max 99.09%;  12 of 194 blocks are incompressible
+
+Processing D:\Testing\errorprt.iso in 4MB blocks: 940,834,785 bytes
+          Byte entropy:  min 25.06%, avg 88.27%, max 99.77%;  100 of 225 blocks are incompressible
+          Word entropy:  min 21.14%, avg 84.31%, max 99.41%;  24 of 225 blocks are incompressible
+  Order-1 byte entropy:  min 16.71%, avg 80.35%, max 99.04%;  21 of 225 blocks are incompressible
+        DWord coverage:  min  1.02%, avg 56.06%, max 98.68%;  19 of 225 blocks are incompressible
+
+Processing D:\Testing\dll4g.dll in 4MB blocks: 4,531,060,447 bytes
+          Byte entropy:  min 17.40%, avg 77.79%, max 99.97%;  12 of 1081 blocks are incompressible
+          Word entropy:  min 12.67%, avg 68.44%, max 99.71%;  6 of 1081 blocks are incompressible
+  Order-1 byte entropy:  min  7.94%, avg 59.08%, max 99.47%;  6 of 1081 blocks are incompressible
+        DWord coverage:  min  0.38%, avg 14.21%, max 94.71%;  0 of 1081 blocks are incompressible
+
+Processing D:\Testing\dll4g.srep.dll in 4MB blocks: 2,994,752,253 bytes
+          Byte entropy:  min 43.34%, avg 79.93%, max 99.95%;  12 of 715 blocks are incompressible
+          Word entropy:  min 36.91%, avg 70.75%, max 99.71%;  7 of 715 blocks are incompressible
+  Order-1 byte entropy:  min 27.07%, avg 61.57%, max 99.47%;  4 of 715 blocks are incompressible
+        DWord coverage:  min  0.54%, avg 18.67%, max 94.69%;  0 of 715 blocks are incompressible

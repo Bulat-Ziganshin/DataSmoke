@@ -1,0 +1,29 @@
+Processing D:\Testing\wav\ChiMai.wav in 4MB blocks: 26,832,428 bytes
+          Byte entropy:  min 82.15%, avg 87.50%, max 90.84%;  0 of 7 blocks are incompressible
+          Word entropy:  min 78.27%, avg 84.29%, max 88.18%;  0 of 7 blocks are incompressible
+  Order-1 byte entropy:  min 74.40%, avg 81.09%, max 85.52%;  0 of 7 blocks are incompressible
+        DWord coverage:  min 42.59%, avg 71.61%, max 87.55%;  0 of 7 blocks are incompressible
+
+Processing D:\Testing\wav\Glukoza.wav in 4MB blocks: 35,887,148 bytes
+          Byte entropy:  min 92.08%, avg 94.73%, max 97.16%;  5 of 9 blocks are incompressible
+          Word entropy:  min 90.14%, avg 93.40%, max 96.55%;  4 of 9 blocks are incompressible
+  Order-1 byte entropy:  min 88.20%, avg 92.06%, max 95.93%;  3 of 9 blocks are incompressible
+        DWord coverage:  min 91.98%, avg 92.51%, max 98.85%;  7 of 9 blocks are incompressible
+
+Processing D:\Testing\wav\GorkyPark.wav in 4MB blocks: 26,636,588 bytes
+          Byte entropy:  min 92.08%, avg 93.55%, max 95.37%;  5 of 7 blocks are incompressible
+          Word entropy:  min 90.26%, avg 91.97%, max 94.15%;  0 of 7 blocks are incompressible
+  Order-1 byte entropy:  min 88.44%, avg 90.39%, max 92.93%;  0 of 7 blocks are incompressible
+        DWord coverage:  min 69.48%, avg 88.32%, max 97.66%;  5 of 7 blocks are incompressible
+
+Processing D:\Testing\wav\stereo8.wav in 4MB blocks: 26,650,412 bytes
+          Byte entropy:  min 81.30%, avg 82.98%, max 85.66%;  0 of 7 blocks are incompressible
+          Word entropy:  min 75.96%, avg 77.20%, max 80.33%;  0 of 7 blocks are incompressible
+  Order-1 byte entropy:  min 70.61%, avg 71.43%, max 75.00%;  0 of 7 blocks are incompressible
+        DWord coverage:  min 37.33%, avg 45.33%, max 53.03%;  0 of 7 blocks are incompressible
+
+Processing D:\Testing\wav\Ukr.wav in 4MB blocks: 39,172,652 bytes
+          Byte entropy:  min 96.70%, avg 97.40%, max 98.39%;  9 of 10 blocks are incompressible
+          Word entropy:  min 95.84%, avg 96.87%, max 98.11%;  9 of 10 blocks are incompressible
+  Order-1 byte entropy:  min 94.98%, avg 96.35%, max 97.84%;  8 of 10 blocks are incompressible
+        DWord coverage:  min 92.17%, avg 95.82%, max 99.13%;  8 of 10 blocks are incompressible

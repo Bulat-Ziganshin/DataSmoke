@@ -268,7 +268,7 @@ int main (int argc, char **argv)
 
 //    char temp1[100];  printf("%s bytes\n", show3(origsize,temp1));
     printf("\n");  for(int i=0; i<width; i++) printf("-");
-    printf("-|-------|-------|-------|----------------------------\n");
+    printf("-|------:|------:|------:|----------------------------\n");
     for (int i=0; i<NumSmokers; i++)
       printf("%*s |%6.2lf |%6.2lf |%6.2lf | %d of %d\n", width, smokers[i]->name(), min_entropy[i]*100, avg_entropy[i]/origsize*100, max_entropy[i]*100, incompressible[i], blocks);
   }
