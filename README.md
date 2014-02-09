@@ -8,12 +8,12 @@ Since incompresible, text and multimedia files are better compressed with specif
 This project will provide various experimental algorithms that can recognize some of special datatypes (not necessary all), as well as samples of data that are especially hard to smoke correctly.
 
 
-The full list of smells (speeds measured on the single core of i7-4770):
+The full list of smells (speeds measured on the single core of i7-4770) and their minimal sizes of processed blocks to provide meaningful results:
 
-- ByteSmoker: computes entropy of individual bytes (2 GB/s).
-- WordSmoker: computes entropy of 16-bit words (0.7-1.5 GB/s).
-- DWordSmoker: computes entropy of 32-bit dwords (3 GB/s).
-- Order1Smoker: computes order-1 entropy of 8-bit bytes (0.7-1.5 GB/s).
+- ByteSmoker: computes entropy of independent bytes (2 GB/s). Minimum recommended block is 4 KBytes.
+- WordSmoker: computes entropy of independent 16-bit words (0.7-1.5 GB/s). Minimum recommended block is 1 MBytes.
+- Order1Smoker: computes order-1 entropy of bytes (0.7-1.5 GB/s). Minimum recommended block is 1 MBytes.
+- DWordSmoker: computes coverage of independent 32-bit dwords (3 GB/s). Minimum recommended block is STEP*FILTER Kbytes.
 
 
 And examples of their work:
@@ -35,3 +35,8 @@ Compressed file:
 - WordSmoker entropy: minimum 99.75%, average 99.93%, maximum 99.93%
 - Order1Smoker entropy: minimum 99.49%, average 99.86%, maximum 99.86%
 - DWordSmoker entropy: minimum 96.20%, average 96.95%, maximum 98.04%
+
+
+The whole idea of the library is that we get data of unknown type and analyze them to determine whether it's text, incompressible or so. Overall, I think that ByteSmoker should suffice for 95% of cases, failing only on repetitions of random data (such as two copies of the same zip file) and DWordSmoker should suffice on another 95%, failing on things like base64 encoding (random data of limited charset). I tend to consider as incompressible the data that has >90% for both ByteSmoker and DWordSmoker. Combining them together should provide us with algorithm processing 2 GB/s (since ByteSmoker and DWordSmoker employs different CPU resources) and able to determine almost any data that can be compressed by some algorithm.
+
+Please provide us with the samples of compressible data having unusually high "entropy" values, especially in ByteSmoker and DWordSmoker simultaneously.
