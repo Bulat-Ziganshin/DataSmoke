@@ -136,10 +136,10 @@ void Order1Entropy::smoke (void *buf, size_t bufsize, double *entropy)
 
 
 /***************************************************************************/
-/* DWord coverage: calculate that part of 32-bit dwords are unique         */
+/* DWord coverage: calculate which part of 32-bit dwords are unique        */
 /***************************************************************************/
 
-const size_t HASHSIZE = 128*kb;
+const size_t HASHSIZE = 2*mb;  // it should be small enough to fit in most CPU last-level caches
 
 class DWordCoverage : public Entropy
 {
@@ -168,26 +168,29 @@ uint32_t hash_function (uint32_t x)
 
 void DWordCoverage::smoke (void *buf, size_t bufsize, double *entropy)
 {
-  const size_t   STEP = 4;        // Check only every n'th position
+  const size_t   STEP = 1;        // Check only every n'th position
   const uint32_t FILTER = 16;     // Of those checked, count only every n'th hash
   const uint32_t FILTER_MAX_HASH  =  uint32_t(-1) / FILTER;   // Count only hashes smaller or equal to this value
   const uint32_t FILTER_HASH_DIVIDER  =  (FILTER_MAX_HASH / CHAR_BIT) + 1;  // Dividing filtered hashes by this value will leave only 3 highest bits required to address bit in the byte
 
   memset(table,0,HASHSIZE);
   byte *p = (byte*) buf;
-  for (size_t i=0; i<bufsize-STEP+1; i+=STEP)
+  size_t total_hashes = 0;
+
+  for (size_t i=0; i<bufsize-sizeof(uint32_t)+1; i+=STEP)
   {
     uint32_t hash = hash_function(*(uint32_t*)(p+i));
     if (hash <= FILTER_MAX_HASH)
+      total_hashes++,
       table[hash % HASHSIZE]  |=  1 << (hash/FILTER_HASH_DIVIDER);
   }
 
-  size_t count = 0;
+  size_t unique_hashes = 0;
   for (size_t i=0; i<HASHSIZE; i++)
-    count += bits[table[i]];
+    unique_hashes += bits[table[i]];
 
-  // We have checked bufsize/(STEP*FILTER) hashes and found `count` original values among them
-  *entropy  =  count / (double(bufsize)/(STEP*FILTER));
+  // Coverage is ratio of unique hashes to the total amount of hashes checked
+  *entropy  =  double(unique_hashes) / total_hashes;
 }
 
 
