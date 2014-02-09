@@ -17,28 +17,28 @@ The full list of smells (speeds measured on the single core of i7-4770) and mini
 And examples of their work:
 
   Text file (enwik9) | min % | avg % | max % | incompressible 4MB blocks
----------------------|-------|-------|-------|----------------------------
+---------------------|------:|------:|------:|----------------------------
         Byte entropy | 62.68 | 64.20 | 66.97 | 0 of 239
         Word entropy | 53.14 | 55.97 | 57.93 | 0 of 239
 Order-1 byte entropy | 42.43 | 47.75 | 48.88 | 0 of 239
       DWord coverage |  2.34 |  5.15 |  6.39 | 0 of 239
 
          Binary file | min % | avg % | max % | incompressible 4MB blocks
----------------------|-------|-------|-------|----------------------------
+---------------------|------:|------:|------:|----------------------------
         Byte entropy | 48.49 | 77.67 | 93.62 | 0 of 239
         Word entropy | 33.09 | 68.74 | 92.00 | 0 of 239
 Order-1 byte entropy | 17.69 | 59.81 | 90.39 | 0 of 239
       DWord coverage |  0.38 | 13.74 | 87.16 | 0 of 239
 
 16-bit stereo WAV file | min % | avg % | max % | incompressible 4MB blocks
------------------------|-------|-------|-------|----------------------------
+-----------------------|------:|------:|------:|----------------------------
           Byte entropy | 96.70 | 97.40 | 98.39 | 9 of 10
           Word entropy | 95.84 | 96.87 | 98.11 | 9 of 10
   Order-1 byte entropy | 94.98 | 96.35 | 97.84 | 8 of 10
         DWord coverage | 92.17 | 95.82 | 99.13 | 8 of 10
 
      Compressed file | min % | avg % | max % | incompressible 4MB blocks
----------------------|-------|-------|-------|----------------------------
+---------------------|------:|------:|------:|----------------------------
         Byte entropy |100.00 |100.00 |100.00 | 67 of 67
         Word entropy | 99.93 | 99.93 | 99.93 | 67 of 67
 Order-1 byte entropy | 99.85 | 99.86 | 99.86 | 67 of 67
