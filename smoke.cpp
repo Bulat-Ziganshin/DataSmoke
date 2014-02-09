@@ -237,9 +237,9 @@ int main (int argc, char **argv)
     Order1Entropy Order1S;
     Entropy *smokers[] = {&ByteS, &WordS, &Order1S, &DWordS};
     const int NumSmokers = sizeof(smokers)/sizeof(*smokers);
-    double entropy, min_entropy[NumSmokers], avg_entropy[NumSmokers], max_entropy[NumSmokers];
+    double entropy, min_entropy[NumSmokers], avg_entropy[NumSmokers], max_entropy[NumSmokers];  int incompressible[NumSmokers];
 
-    uint64_t origsize = 0;
+    uint64_t origsize = 0;  int blocks = 0;
     for(;;)
     {
       int bytes_read = fread(buf, 1, BUFSIZE, infile);
@@ -250,7 +250,7 @@ int main (int argc, char **argv)
         smokers[i]->smoke(buf, bytes_read, &entropy);
         if (origsize==0) {                 // first block
           min_entropy[i] = max_entropy[i] = entropy;
-          avg_entropy[i] = 0;
+          avg_entropy[i] = incompressible[i] = 0;
         } else if (bytes_read==BUFSIZE) {  // update min/max entropy only on complete blocks
           if (entropy < min_entropy[i])
             min_entropy[i] = entropy;
@@ -258,15 +258,16 @@ int main (int argc, char **argv)
             max_entropy[i] = entropy;
         }
         avg_entropy[i] += entropy*bytes_read;
+        incompressible[i] += (entropy > 0.95);
       }
 
-      origsize += bytes_read;
+      origsize += bytes_read;  blocks++;
     }
     fclose(infile);
 
     char temp1[100];  printf("%s bytes\n", show3(origsize,temp1));
     for (int i=0; i<NumSmokers; i++)
-      printf("  %s: minimum %.2lf%%, average %.2lf%%, maximum %.2lf%%\n", smokers[i]->name(), min_entropy[i]*100, avg_entropy[i]/origsize*100, max_entropy[i]*100);
+      printf("  %20s:  min%6.2lf%%, avg%6.2lf%%, max%6.2lf%%;  %d of %d blocks are incompressible\n", smokers[i]->name(), min_entropy[i]*100, avg_entropy[i]/origsize*100, max_entropy[i]*100, incompressible[i], blocks);
   }
 
   return EXIT_SUCCESS;

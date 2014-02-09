@@ -1,7 +1,7 @@
 DataSmoke
 =========
 
-Datatype detection in order to choose appropriate compression algorithm or not compress at all. 
+Datatype detection in order to choose appropriate compression algorithm or not compress at all.
 
 Since text, multimedia and incompresible files are better processed with specific algorithms, we need a fast and reliable way to detect those data. I call it data smoking. This project will provide various experimental algorithms that can recognize some of special datatypes (not necessary all), as well as samples of data that are especially hard to smoke correctly.
 
@@ -11,7 +11,7 @@ The full list of smells (speeds measured on the single core of i7-4770) and mini
 - Byte entropy: computes entropy of independent bytes (2 GB/s, 16 KBytes)
 - Word entropy: computes entropy of independent 16-bit words (0.7-1.5 GB/s, 4 MBytes)
 - Order-1 byte entropy: computes order-1 entropy of bytes (0.7-1.5 GB/s, 4 MBytes)
-- DWord coverage: computes coverage of independent 32-bit dwords (3 GB/s, STEP*FILTER*64 bytes, default STEP=4, FILTER=16).
+- DWord coverage: computes coverage of independent 32-bit dwords (0.5 GB/s, STEP*FILTER*64 bytes, default STEP=1, FILTER=16).
 
 
 And examples of their work:
