@@ -31,7 +31,7 @@ public:
 class ByteSmoker : public Smoker
 {
 public:
-  virtual const char* name()  {return "ByteSmoker";};
+  virtual const char* name()  {return "Byte entropy";};
   virtual void smoke (void *buf, size_t bufsize, double *entropy);
 };
 
@@ -72,7 +72,7 @@ class WordSmoker : public Smoker
   uint32_t *count;
 public:
   WordSmoker()                {count = new uint32_t[256*256];}
-  virtual const char* name()  {return "WordSmoker";};
+  virtual const char* name()  {return "Word entropy";};
   virtual ~WordSmoker()       {delete[] count;}
   virtual void smoke (void *buf, size_t bufsize, double *entropy);
 };
@@ -105,7 +105,7 @@ class Order1Smoker : public Smoker
   uint32_t *count;
 public:
   Order1Smoker()              {count = new uint32_t[256*256];}
-  virtual const char* name()  {return "Order1Smoker";};
+  virtual const char* name()  {return "Order-1 byte entropy";};
   virtual ~Order1Smoker()     {delete[] count;}
   virtual void smoke (void *buf, size_t bufsize, double *entropy);
 };
@@ -147,7 +147,7 @@ class DWordSmoker : public Smoker
   size_t bits[256];
 public:
   DWordSmoker();
-  virtual const char* name()  {return "DWordSmoker";};
+  virtual const char* name()  {return "DWord coverage";};
   virtual ~DWordSmoker()      {delete[] table;}
   virtual void smoke (void *buf, size_t bufsize, double *entropy);
 };
@@ -260,7 +260,7 @@ int main (int argc, char **argv)
 
     char temp1[100];  printf("%s bytes\n", show3(origsize,temp1));
     for (int i=0; i<NumSmokers; i++)
-      printf("  %s entropy: minimum %.2lf%%, average %.2lf%%, maximum %.2lf%%\n", smokers[i]->name(), min_entropy[i]*100, avg_entropy[i]/origsize*100, max_entropy[i]*100);
+      printf("  %s: minimum %.2lf%%, average %.2lf%%, maximum %.2lf%%\n", smokers[i]->name(), min_entropy[i]*100, avg_entropy[i]/origsize*100, max_entropy[i]*100);
   }
 
   return EXIT_SUCCESS;
