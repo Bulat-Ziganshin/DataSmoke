@@ -197,6 +197,65 @@ void DWordCoverage::smoke (void *buf, size_t bufsize, double *entropy)
 }
 
 
+/***************************************************************************/
+/* DWord coverage: calculate which part of 32-bit dwords are unique        */
+/***************************************************************************/
+
+class TwoPassDWordCoverage : public Entropy
+{
+  uint32_t *table;
+  size_t bits[256];
+  static const size_t HASHSIZE = 256*256;
+public:
+  TwoPassDWordCoverage();
+  virtual const char* name()        {return "2-pass DWord coverage";};
+  virtual ~TwoPassDWordCoverage()   {delete[] table;}
+  virtual void smoke (void *buf, size_t bufsize, double *entropy);
+};
+
+TwoPassDWordCoverage::TwoPassDWordCoverage()
+{
+  table = new uint32_t[HASHSIZE];
+  bits[0] = 0;
+  for (int i=1; i<256; i++)
+    bits[i]  =  bits[i/2] + (i%2);
+}
+
+void TwoPassDWordCoverage::smoke (void *buf, size_t bufsize, double *entropy)
+{
+  const size_t STEP = 1;        // Check only every n'th position
+  byte *p = (byte*) buf;
+
+  memset(table,0,HASHSIZE*sizeof(*table));
+  for (size_t i=0;  i<bufsize-sizeof(uint32_t)+1;  i+=STEP)
+  {
+    uint32_t hash = hash_function(*(uint32_t*)(p+i));
+    table[hash%HASHSIZE]++;
+  }
+
+  size_t max_i=0;  uint32_t max_count=0;
+  for (size_t i=0; i<HASHSIZE; i++)
+    if (table[i] > max_count)
+      max_i=i,  max_count=table[i];
+
+  memset(table,0,HASHSIZE*sizeof(*table));
+  for (size_t i=0;  i<bufsize-sizeof(uint32_t)+1;  i+=STEP)
+  {
+    uint32_t hash = hash_function(*(uint32_t*)(p+i));
+    if (hash%HASHSIZE == max_i)
+      table[hash/HASHSIZE]=1;
+  }
+
+  size_t unique_hashes = 0;
+  for (size_t i=0; i<(1u<<31)/(HASHSIZE/2); i++)
+    unique_hashes += table[i];
+
+  // Coverage is ratio of unique hashes to the total amount of hashes checked
+  *entropy  =  double(unique_hashes) / max_count;
+  //printf("\n%d / %d = %.2lf%%", int(unique_hashes), int(max_count), *entropy*100);
+}
+
+
 /**********************************************************************/
 /* Supplementary code                                                 */
 /**********************************************************************/
@@ -216,14 +275,15 @@ int main (int argc, char **argv)
     static char buf[BUFSIZE];
 
     FILE *infile  = fopen (argv[file], "rb");  if (infile==NULL)  {printf("Can't open input file %s!\n",    argv[file]); return EXIT_FAILURE;}
-    int width = strlen(argv[file]);  width = width>20? width : 20;
+    int width = strlen(argv[file]);  width = width>21? width : 21;
     printf("%s%*s | min %% | avg %% | max %% | incompressible %dMB blocks", file>1?"\n":"", width, argv[file], BUFSIZE/mb);
 
     ByteEntropy   ByteS;
     WordEntropy   WordS;
-    DWordCoverage DWordS;
     Order1Entropy Order1S;
-    Entropy *smokers[] = {&ByteS, &WordS, &Order1S, &DWordS};
+    DWordCoverage DWordS;
+    TwoPassDWordCoverage TwoPassDWordS;
+    Entropy *smokers[] = {&ByteS, &WordS, &Order1S, &DWordS, &TwoPassDWordS};
     const int NumSmokers = sizeof(smokers)/sizeof(*smokers);
     double entropy, min_entropy[NumSmokers], avg_entropy[NumSmokers], max_entropy[NumSmokers];  int incompressible[NumSmokers];
 
