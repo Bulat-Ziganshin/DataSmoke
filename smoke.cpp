@@ -1,4 +1,4 @@
-char version[] = "DataSmoker 0.2  2014-02-09";
+char version[] = "DataSmoker 0.3  2014-02-10";
 
 char copyright[] = "Developed by Bulat Ziganshin\n"
                    "The code is placed in public domain\n";
@@ -185,6 +185,9 @@ void DWordCoverage::smoke (void *buf, size_t bufsize, double *entropy)
       table[hash % HASHSIZE]  |=  1 << (hash/FILTER_HASH_DIVIDER);
   }
 
+  if (total_hashes==0)
+    {*entropy=0; return;}
+
   size_t unique_hashes = 0;
   for (size_t i=0; i<HASHSIZE; i++)
     unique_hashes += bits[table[i]];
@@ -197,22 +200,6 @@ void DWordCoverage::smoke (void *buf, size_t bufsize, double *entropy)
 /**********************************************************************/
 /* Supplementary code                                                 */
 /**********************************************************************/
-
-static char* show3 (uint64_t n, char *buf, const char *prepend="")
-{
-    char *p = buf + 27+strlen(prepend);
-    int i = 4;
-
-    *p = '\0';
-    do {
-        if (!--i) *--p = ',', i = 3;
-        *--p = '0' + (n % 10);
-    } while (n /= 10);
-
-    memcpy (p-strlen(prepend), prepend, strlen(prepend));
-    return p-strlen(prepend);
-}
-
 
 int main (int argc, char **argv)
 {
@@ -266,9 +253,7 @@ int main (int argc, char **argv)
     }
     fclose(infile);
 
-//    char temp1[100];  printf("%s bytes\n", show3(origsize,temp1));
-    printf("\n");  for(int i=0; i<width; i++) printf("-");
-    printf("-|------:|------:|------:|----------------------------\n");
+    printf("\n");  for(int i=0; i<width; i++) printf("-");  printf("-|------:|------:|------:|----------------------------\n");
     for (int i=0; i<NumSmokers; i++)
       printf("%*s |%6.2lf |%6.2lf |%6.2lf | %d of %d\n", width, smokers[i]->name(), min_entropy[i]*100, avg_entropy[i]/origsize*100, max_entropy[i]*100, incompressible[i], blocks);
   }
