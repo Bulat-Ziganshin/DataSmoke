@@ -141,6 +141,44 @@ void Order1Entropy::smoke (void *buf, size_t bufsize, double *entropy)
 }
 
 
+/*****************************************************************************************/
+/* DWord hash entropy: calculate compression ratio with the hash-of-32-bit order-0 model */
+/*****************************************************************************************/
+
+class DWordHashEntropy : public Entropy
+{
+  static const size_t HASHSIZE = 256*256;
+  uint32_t *count;
+public:
+  DWordHashEntropy()            {count = new uint32_t[HASHSIZE];}
+  virtual const char* name()    {return "DWord hash entropy";}
+  virtual ~DWordHashEntropy()   {delete[] count;}
+  virtual void smoke (void *buf, size_t bufsize, double *entropy);
+};
+
+void DWordHashEntropy::smoke (void *buf, size_t bufsize, double *entropy)
+{
+  const size_t STEP = 1;        // Check only one of every STEP positions
+  byte *p = (byte*) buf;
+
+  memset(count,0,HASHSIZE*sizeof(*count));
+  for (size_t i=0;  i<=bufsize-sizeof(uint32_t);  i+=STEP)
+  {
+    uint32_t hash = hash_function(*(uint32_t*)(p+i));
+    count[(hash+hash/HASHSIZE)%HASHSIZE]++;
+  }
+
+  double order0 = 0;
+  for (int i=0; i<HASHSIZE; i++)
+  {
+    if (count[i])
+      order0 += count[i] * log(double(bufsize)/count[i])/log(double(2)) / 16;
+  }
+
+  *entropy  =  order0 / bufsize;
+}
+
+
 /***************************************************************************/
 /* DWord coverage: calculate which part of 32-bit dwords are unique        */
 /***************************************************************************/
@@ -274,9 +312,10 @@ int main (int argc, char **argv)
     ByteEntropy   ByteS;
     WordEntropy   WordS;
     Order1Entropy Order1S;
+    DWordHashEntropy DWordHashS;
     DWordCoverage DWordS;
     TwoPassDWordCoverage TwoPassDWordS;
-    Entropy *smokers[] = {&ByteS, &WordS, &Order1S, &DWordS, &TwoPassDWordS};
+    Entropy *smokers[] = {&ByteS, &WordS, &Order1S, &DWordHashS, &DWordS, &TwoPassDWordS};
     const int NumSmokers = sizeof(smokers)/sizeof(*smokers);
     double entropy, min_entropy[NumSmokers], avg_entropy[NumSmokers], max_entropy[NumSmokers];  int incompressible[NumSmokers];
 
