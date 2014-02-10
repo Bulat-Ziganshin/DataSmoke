@@ -139,10 +139,9 @@ void Order1Entropy::smoke (void *buf, size_t bufsize, double *entropy)
 /* DWord coverage: calculate which part of 32-bit dwords are unique        */
 /***************************************************************************/
 
-const size_t HASHSIZE = 2*mb;  // it should be small enough to fit in most CPU last-level caches
-
 class DWordCoverage : public Entropy
 {
+  static const size_t HASHSIZE = 2*mb;  // it should be small enough to fit in most CPU last-level caches
   byte *table;
   size_t bits[256];
 public:
@@ -203,23 +202,14 @@ void DWordCoverage::smoke (void *buf, size_t bufsize, double *entropy)
 
 class TwoPassDWordCoverage : public Entropy
 {
-  uint32_t *table;
-  size_t bits[256];
   static const size_t HASHSIZE = 256*256;
+  uint32_t *table;
 public:
-  TwoPassDWordCoverage();
+  TwoPassDWordCoverage()            {table = new uint32_t[HASHSIZE];}
   virtual const char* name()        {return "2-pass DWord coverage";};
   virtual ~TwoPassDWordCoverage()   {delete[] table;}
   virtual void smoke (void *buf, size_t bufsize, double *entropy);
 };
-
-TwoPassDWordCoverage::TwoPassDWordCoverage()
-{
-  table = new uint32_t[HASHSIZE];
-  bits[0] = 0;
-  for (int i=1; i<256; i++)
-    bits[i]  =  bits[i/2] + (i%2);
-}
 
 void TwoPassDWordCoverage::smoke (void *buf, size_t bufsize, double *entropy)
 {
