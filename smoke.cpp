@@ -141,9 +141,9 @@ void Order1Entropy::smoke (void *buf, size_t bufsize, double *entropy)
 }
 
 
-/*****************************************************************************************/
-/* DWord hash entropy: calculate compression ratio with the hash-of-32-bit order-0 model */
-/*****************************************************************************************/
+/*********************************************************************************************************/
+/* DWord hash entropy: calculate compression ratio with the 16-bit hashes of 32-bit values order-0 model */
+/*********************************************************************************************************/
 
 class DWordHashEntropy : public Entropy
 {
@@ -241,18 +241,29 @@ void DWordCoverage::smoke (void *buf, size_t bufsize, double *entropy)
 
 class TwoPassDWordCoverage : public Entropy
 {
-  static const size_t HASHSIZE = 256*256;
-  uint32_t *table;
+  static const size_t HASHSIZE = 2*mb;  // it should be small enough to fit in most CPU last-level caches
+  byte *table;
+  size_t bits[256];
 public:
-  TwoPassDWordCoverage()            {table = new uint32_t[HASHSIZE];}
+  TwoPassDWordCoverage();
   virtual const char* name()        {return "2-pass DWord coverage";};
   virtual ~TwoPassDWordCoverage()   {delete[] table;}
   virtual void smoke (void *buf, size_t bufsize, double *entropy);
 };
 
+TwoPassDWordCoverage::TwoPassDWordCoverage()
+{
+  table = new byte[HASHSIZE];
+  bits[0] = 0;
+  for (int i=1; i<256; i++)
+    bits[i]  =  bits[i/2] + (i%2);
+}
+
 void TwoPassDWordCoverage::smoke (void *buf, size_t bufsize, double *entropy)
 {
   const size_t STEP = 1;        // Check only one of every STEP positions
+  const size_t SECTORS = 16;
+  uint32_t sector_cnt[SECTORS] = {0};
   byte *p = (byte*) buf;
 
   // 1st pass: find the most populated sector
@@ -260,30 +271,31 @@ void TwoPassDWordCoverage::smoke (void *buf, size_t bufsize, double *entropy)
   for (size_t i=0;  i<=bufsize-sizeof(uint32_t);  i+=STEP)
   {
     uint32_t hash = hash_function(*(uint32_t*)(p+i));
-    table[hash%HASHSIZE]++;
+    sector_cnt[hash%SECTORS]++;
   }
 
-  size_t max_i=0;  uint32_t max_count=0;
-  for (size_t i=0; i<HASHSIZE; i++)
-    if (table[i] > max_count)
-      max_i=i,  max_count=table[i];
+  // Find the most populated sector
+  uint32_t sector=0, total_hashes=0;
+  for (uint32_t i=0; i<SECTORS; i++)
+    if (sector_cnt[i] > total_hashes)
+      sector=i,  total_hashes=sector_cnt[i];
 
   // 2nd pass: compute the sector's coverage
-  memset(table,0,HASHSIZE*sizeof(*table));
+  memset(table,0,HASHSIZE);
   for (size_t i=0;  i<=bufsize-sizeof(uint32_t);  i+=STEP)
   {
     uint32_t hash = hash_function(*(uint32_t*)(p+i));
-    if (hash%HASHSIZE == max_i)
-      table[hash/HASHSIZE]=1;
+    if (hash%SECTORS == sector)
+      table[(hash/SECTORS) % HASHSIZE]  |=  1 << (hash>>29);
   }
 
   size_t unique_hashes = 0;
-  for (size_t i=0; i<(1u<<31)/(HASHSIZE/2); i++)
-    unique_hashes += table[i];
+  for (size_t i=0; i<HASHSIZE; i++)
+    unique_hashes += bits[table[i]];
 
   // Coverage is ratio of unique hashes to the total amount of hashes checked
-  *entropy  =  double(unique_hashes) / max_count;
-  //printf("\n%d / %d = %.2lf%%", int(unique_hashes), int(max_count), *entropy*100);
+  *entropy  =  double(unique_hashes) / total_hashes;
+  //printf("\n%d / %d = %.2lf%%", int(unique_hashes), int(total_hashes), *entropy*100);
 }
 
 
