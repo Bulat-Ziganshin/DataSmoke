@@ -23,6 +23,12 @@ public:
   virtual void smoke (void *buf, size_t bufsize, double *entropy) = 0;
 };
 
+uint32_t hash_function (uint32_t x)
+{
+  uint64_t hash  =  x * uint64_t(123456791u);
+  return uint32_t(hash>>32) ^ uint32_t(hash);
+}
+
 
 /**************************************************************************/
 /* Byte entropy: calculate compression ratio with the 8-bit order-0 model */
@@ -159,12 +165,6 @@ DWordCoverage::DWordCoverage()
     bits[i]  =  bits[i/2] + (i%2);
 }
 
-uint32_t hash_function (uint32_t x)
-{
-  uint64_t hash  =  x * uint64_t(123456791u);
-  return uint32_t(hash>>32) ^ uint32_t(hash);
-}
-
 void DWordCoverage::smoke (void *buf, size_t bufsize, double *entropy)
 {
   const size_t   STEP = 1;        // Check only every n'th position
@@ -176,7 +176,7 @@ void DWordCoverage::smoke (void *buf, size_t bufsize, double *entropy)
   byte *p = (byte*) buf;
   size_t total_hashes = 0;
 
-  for (size_t i=0; i<bufsize-sizeof(uint32_t)+1; i+=STEP)
+  for (size_t i=0;  i<=bufsize-sizeof(uint32_t);  i+=STEP)
   {
     uint32_t hash = hash_function(*(uint32_t*)(p+i));
     if (hash <= FILTER_MAX_HASH)
@@ -197,7 +197,8 @@ void DWordCoverage::smoke (void *buf, size_t bufsize, double *entropy)
 
 
 /***************************************************************************/
-/* DWord coverage: calculate which part of 32-bit dwords are unique        */
+/* 2-pass DWord coverage: select the most populated sector and then        */
+/*   calculate which part of 32-bit dwords in the sector are unique        */
 /***************************************************************************/
 
 class TwoPassDWordCoverage : public Entropy
@@ -213,11 +214,12 @@ public:
 
 void TwoPassDWordCoverage::smoke (void *buf, size_t bufsize, double *entropy)
 {
-  const size_t STEP = 1;        // Check only every n'th position
+  const size_t STEP = 1;        // Check only one of every STEP positions
   byte *p = (byte*) buf;
 
+  // 1st pass: find the most populated sector
   memset(table,0,HASHSIZE*sizeof(*table));
-  for (size_t i=0;  i<bufsize-sizeof(uint32_t)+1;  i+=STEP)
+  for (size_t i=0;  i<=bufsize-sizeof(uint32_t);  i+=STEP)
   {
     uint32_t hash = hash_function(*(uint32_t*)(p+i));
     table[hash%HASHSIZE]++;
@@ -228,8 +230,9 @@ void TwoPassDWordCoverage::smoke (void *buf, size_t bufsize, double *entropy)
     if (table[i] > max_count)
       max_i=i,  max_count=table[i];
 
+  // 2nd pass: compute the sector's coverage
   memset(table,0,HASHSIZE*sizeof(*table));
-  for (size_t i=0;  i<bufsize-sizeof(uint32_t)+1;  i+=STEP)
+  for (size_t i=0;  i<=bufsize-sizeof(uint32_t);  i+=STEP)
   {
     uint32_t hash = hash_function(*(uint32_t*)(p+i));
     if (hash%HASHSIZE == max_i)
