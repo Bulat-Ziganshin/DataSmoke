@@ -366,7 +366,8 @@ int main (int argc, char **argv)
     TwoPassDWordCoverage TwoPassDWordS;
     Entropy *smokers[] = {&ByteS, &WordS, &Order1S, &DWordHashS, &DWordS, &TwoPassDWordS};
     const int NumSmokers = sizeof(smokers)/sizeof(*smokers);
-    double entropy, min_entropy[NumSmokers], avg_entropy[NumSmokers], max_entropy[NumSmokers];  int incompressible[NumSmokers];
+    double entropy, min_entropy[NumSmokers], avg_entropy[NumSmokers], max_entropy[NumSmokers];
+    int incompressible[NumSmokers];  char incompressible_list[NumSmokers][1000];
 
     uint64_t origsize = 0;  int blocks = 0;
     for(;;)
@@ -380,6 +381,7 @@ int main (int argc, char **argv)
         if (origsize==0) {                 // first block
           min_entropy[i] = max_entropy[i] = entropy;
           avg_entropy[i] = incompressible[i] = 0;
+          *incompressible_list[i] = '\0';
         } else if (bytes_read==bufsize) {  // update min/max entropy only on complete blocks
           if (entropy < min_entropy[i])
             min_entropy[i] = entropy;
@@ -387,7 +389,16 @@ int main (int argc, char **argv)
             max_entropy[i] = entropy;
         }
         avg_entropy[i] += entropy*bytes_read;
-        incompressible[i] += (entropy > 0.95);
+
+        if (entropy > 0.95)
+        {
+          sprintf (strchr(incompressible_list[i],'\0'),
+                   incompressible[i]== 0? ":  %d" :
+                   incompressible[i] <10? ", %d"  :
+                   incompressible[i]==10? "..."   :
+                                          ""      , blocks);
+          ++incompressible[i];
+        }
       }
 
       origsize += bytes_read;  blocks++;
@@ -396,7 +407,7 @@ int main (int argc, char **argv)
 
     printf("\n");  for(int i=0; i<width; i++) printf("-");  printf("-|------:|------:|------:|----------------------------\n");
     for (int i=0; i<NumSmokers; i++)
-      printf("%*s |%6.2lf |%6.2lf |%6.2lf | %d of %d\n", width, smokers[i]->name(), min_entropy[i]*100, avg_entropy[i]/origsize*100, max_entropy[i]*100, incompressible[i], blocks);
+      printf("%*s |%6.2lf |%6.2lf |%6.2lf | %d of %d%s\n", width, smokers[i]->name(), min_entropy[i]*100, avg_entropy[i]/origsize*100, max_entropy[i]*100, incompressible[i], blocks, incompressible_list[i]);
   }
 
   return EXIT_SUCCESS;
