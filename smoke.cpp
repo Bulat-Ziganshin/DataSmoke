@@ -12,7 +12,8 @@ char copyright[] = "Developed by Bulat Ziganshin\n"
 #include <limits.h>
 
 #define kb 1024
-#define mb (kb*kb)
+#define mb (1024*kb)
+#define gb (1024*mb)
 typedef unsigned char byte;
 
 class Entropy
@@ -303,23 +304,59 @@ void TwoPassDWordCoverage::smoke (void *buf, size_t bufsize, double *entropy)
 /* Supplementary code                                                 */
 /**********************************************************************/
 
+// Similar to parseInt, but the string param may have a suffix b/k/m/g/^, representing units of memory, or in the case of '^', the power of 2
+size_t parseMem (char *param, int *error, char spec)
+{
+  size_t n=0;
+  char c = *param=='='? *++param : *param;
+  if (! (c>='0' && c<='9'))  {*error=1; return 0;}
+  while (c>='0' && c<='9')   n=n*10+c-'0', c=*++param;
+  switch (c? c : spec)
+  {
+    case 'b':  return n;
+    case 'k':  return n*kb;
+    case 'm':  return n*mb;
+    case 'g':  return n*gb;
+    case '^':  return size_t(1)<<n;
+  }
+  *error=1; return 0;
+}
+
+// Returns a string with the amount of memory
+char *showMem (size_t mem, char *result)
+{
+       if (mem%gb==0) sprintf (result, "%.0lfgb", double(mem/gb));
+  else if (mem%mb==0) sprintf (result, "%.0lfmb", double(mem/mb));
+  else if (mem%kb==0) sprintf (result, "%.0lfkb", double(mem/kb));
+  else                sprintf (result, "%.0lfb",  double(mem));
+  return result;
+}
+
 int main (int argc, char **argv)
 {
+  int bufsize = 4*mb;  char temp1[100];
   if (argc==1)
   {
     printf("%s", version);
-    printf("\n\nUsage: smoke infiles...\n\n%s", copyright);
+    printf("\n\nUsage: smoke [-bBUFSIZE] infiles...\nBUFSIZE examples: 64k, 16m/16, 1g; default=%s\n\n%s", showMem(bufsize,temp1), copyright);
     return EXIT_FAILURE;
   }
 
+  if (memcmp(argv[1],"-b",2)==0)
+  {
+    int error;
+    bufsize  =  parseMem (argv[1]+2, &error, 'm');
+    if (error)  {printf("Bad option %s!\n", argv[1]); return EXIT_FAILURE;}
+    argv++, argc--;
+  }
+  char *buf = new char[bufsize];
+
   for (int file=1; file < argc; file++)
   {
-    const int BUFSIZE = 4*mb;
-    static char buf[BUFSIZE];
 
-    FILE *infile  = fopen (argv[file], "rb");  if (infile==NULL)  {printf("Can't open input file %s!\n",    argv[file]); return EXIT_FAILURE;}
+    FILE *infile  = fopen (argv[file], "rb");  if (infile==NULL)  {printf("Can't open input file %s!\n", argv[file]); return EXIT_FAILURE;}
     int width = strlen(argv[file]);  width = width>21? width : 21;
-    printf("%s%*s | min %% | avg %% | max %% | incompressible %dMB blocks", file>1?"\n":"", width, argv[file], BUFSIZE/mb);
+    printf("%s%*s | min %% | avg %% | max %% | incompressible %s blocks", file>1?"\n":"", width, argv[file], showMem(bufsize,temp1));
 
     ByteEntropy   ByteS;
     WordEntropy   WordS;
@@ -334,7 +371,7 @@ int main (int argc, char **argv)
     uint64_t origsize = 0;  int blocks = 0;
     for(;;)
     {
-      int bytes_read = fread(buf, 1, BUFSIZE, infile);
+      int bytes_read = fread(buf, 1, bufsize, infile);
       if (bytes_read==0) break;
 
       for (int i=0; i<NumSmokers; i++)
@@ -343,7 +380,7 @@ int main (int argc, char **argv)
         if (origsize==0) {                 // first block
           min_entropy[i] = max_entropy[i] = entropy;
           avg_entropy[i] = incompressible[i] = 0;
-        } else if (bytes_read==BUFSIZE) {  // update min/max entropy only on complete blocks
+        } else if (bytes_read==bufsize) {  // update min/max entropy only on complete blocks
           if (entropy < min_entropy[i])
             min_entropy[i] = entropy;
           if (entropy > max_entropy[i])
