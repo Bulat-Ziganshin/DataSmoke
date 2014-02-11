@@ -1,4 +1,4 @@
-char version[] = "DataSmoker 0.3  2014-02-10";
+char version[] = "DataSmoker 0.3  2014-02-11";
 
 char copyright[] = "Developed by Bulat Ziganshin\n"
                    "The code is placed in public domain\n";
@@ -307,7 +307,7 @@ void TwoPassDWordCoverage::smoke (void *buf, size_t bufsize, double *entropy)
 // Similar to parseInt, but the string param may have a suffix b/k/m/g/^, representing units of memory, or in the case of '^', the power of 2
 size_t parseMem (char *param, int *error, char spec)
 {
-  size_t n=0;
+  size_t n=0;  *error=0;
   char c = *param=='='? *++param : *param;
   if (! (c>='0' && c<='9'))  {*error=1; return 0;}
   while (c>='0' && c<='9')   n=n*10+c-'0', c=*++param;
@@ -407,7 +407,7 @@ int main (int argc, char **argv)
 
     printf("\n");  for(int i=0; i<width; i++) printf("-");  printf("-|------:|------:|------:|----------------------------\n");
     for (int i=0; i<NumSmokers; i++)
-      printf("%*s |%6.2lf |%6.2lf |%6.2lf | %d of %d%s\n", width, smokers[i]->name(), min_entropy[i]*100, avg_entropy[i]/origsize*100, max_entropy[i]*100, incompressible[i], blocks, incompressible_list[i]);
+      printf("%*s |%6.2lf |%6.2lf |%6.2lf | %d of %d%s\n", width, smokers[i]->name(), min_entropy[i]*100, avg_entropy[i]/origsize*100, max_entropy[i]*100, incompressible[i], blocks, (incompressible[i]<blocks? incompressible_list[i] : ""));
   }
 
   return EXIT_SUCCESS;
