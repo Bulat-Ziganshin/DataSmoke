@@ -263,21 +263,26 @@ TwoPassDWordCoverage::TwoPassDWordCoverage()
 void TwoPassDWordCoverage::smoke (void *buf, size_t bufsize, double *entropy)
 {
   const size_t STEP = 1;        // Check only one of every STEP positions
-  const size_t SECTORS = 16;
-  uint32_t sector_cnt[SECTORS] = {0};
+  const size_t MAX_SECTORS = 8192;
+  uint32_t sector_cnt[MAX_SECTORS] = {0};
   byte *p = (byte*) buf;
 
-  // 1st pass: find the most populated sector
-  memset(table,0,HASHSIZE*sizeof(*table));
+  uint32_t sectors = bufsize/(256*kb),  sectors_log = 0;
+  if (sectors > MAX_SECTORS)  sectors = MAX_SECTORS;
+  while (sectors) sectors/=2, sectors_log++;
+  sectors = 1<<sectors_log;
+  uint32_t sectors_mask = sectors-1;
+
+  // 1st pass: count hashes in each sector
   for (size_t i=0;  i<=bufsize-sizeof(uint32_t);  i+=STEP)
   {
     uint32_t hash = hash_function(*(uint32_t*)(p+i));
-    sector_cnt[hash%SECTORS]++;
+    sector_cnt[hash & sectors_mask]++;
   }
 
   // Find the most populated sector
   uint32_t sector=0, total_hashes=0;
-  for (uint32_t i=0; i<SECTORS; i++)
+  for (uint32_t i=0; i<sectors; i++)
     if (sector_cnt[i] > total_hashes)
       sector=i,  total_hashes=sector_cnt[i];
 
@@ -286,8 +291,8 @@ void TwoPassDWordCoverage::smoke (void *buf, size_t bufsize, double *entropy)
   for (size_t i=0;  i<=bufsize-sizeof(uint32_t);  i+=STEP)
   {
     uint32_t hash = hash_function(*(uint32_t*)(p+i));
-    if (hash%SECTORS == sector)
-      table[(hash/SECTORS) % HASHSIZE]  |=  1 << (hash>>29);
+    if ((hash&sectors_mask) == sector)
+      table[(hash>>sectors_log) % HASHSIZE]  |=  1 << (hash>>29);
   }
 
   size_t unique_hashes = 0;
@@ -296,7 +301,7 @@ void TwoPassDWordCoverage::smoke (void *buf, size_t bufsize, double *entropy)
 
   // Coverage is ratio of unique hashes to the total amount of hashes checked
   *entropy  =  double(unique_hashes) / total_hashes;
-  //printf("\n%d / %d = %.2lf%%", int(unique_hashes), int(total_hashes), *entropy*100);
+  //printf("\n%d sectors, %d / %d = %.2lf%%", int(sectors), int(unique_hashes), int(total_hashes), *entropy*100);
 }
 
 
@@ -358,8 +363,8 @@ int main (int argc, char **argv)
     int width = strlen(argv[file]);  width = width>21? width : 21;
     printf("%s%*s | min %% | avg %% | max %% | incompressible %s blocks", file>1?"\n":"", width, argv[file], showMem(bufsize,temp1));
 
-    ByteEntropy   ByteS;
-    WordEntropy   WordS;
+    ByteEntropy ByteS;
+    WordEntropy WordS;
     Order1Entropy Order1S;
     DWordHashEntropy DWordHashS;
     DWordCoverage DWordS;
