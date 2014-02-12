@@ -1,4 +1,4 @@
-char version[] = "DataSmoker 0.3  2014-02-11";
+char version[] = "DataSmoker 0.3  2014-02-12";
 
 char copyright[] = "Developed by Bulat Ziganshin\n"
                    "The code is placed in public domain\n";
