@@ -10,6 +10,7 @@ char copyright[] = "Developed by Bulat Ziganshin\n"
 #include <string.h>
 #include <math.h>
 #include <limits.h>
+#include <ctype.h>
 
 #define kb 1024
 #define mb (1024*kb)
@@ -23,12 +24,6 @@ public:
   virtual ~Entropy() {}
   virtual void smoke (void *buf, size_t bufsize, double *entropy) = 0;
 };
-
-uint32_t hash_function (uint32_t x)
-{
-  uint64_t hash  =  x * uint64_t(123456791u);
-  return uint32_t(hash>>32) ^ uint32_t(hash);
-}
 
 
 // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -45,13 +40,35 @@ uint32_t a_mm_crc32_u32(uint32_t crc, uint32_t value) {
   asm("crc32l %[value], %[crc]\n" : [crc] "+r" (crc) : [value] "rm" (value));
   return crc;
 }
-#define hash_function(c)  (a_mm_crc32_u32(0xFFFFFFFF,(c)))
+
+uint32_t hash_function (uint32_t x)
+{
+  return a_mm_crc32_u32(0xFFFFFFFF,x);
+}
+
+uint32_t hash_function (uint64_t x)
+{
+  return a_mm_crc32_u32(a_mm_crc32_u32(0xFFFFFFFF,uint32_t(x>>32)),uint32_t(x));
+}
 
 bool crc32c()  /* Check CPU for CRC32c asm instruction support (part of SSE4.2) */
 {
   uint32_t eax, ebx, ecx, edx;
   __get_cpuid(1, &eax, &ebx, &ecx, &edx);
   return (ecx & bit_SSE4_2) != 0;
+}
+
+#else  // non-GCC compilers
+
+uint32_t hash_function (uint32_t x)
+{
+  uint64_t hash  =  x * uint64_t(123456791u);
+  return uint32_t(hash>>32) ^ uint32_t(hash);
+}
+
+uint32_t hash_function (uint64_t x)
+{
+  return hash_function( hash_function(uint32_t(x>>32)) ^ uint32_t(x) );
 }
 
 #endif
@@ -261,23 +278,25 @@ void DWordCoverage::smoke (void *buf, size_t bufsize, double *entropy)
 
 
 /***************************************************************************/
-/* 2-pass DWord coverage: select the most populated sector and then        */
-/*   calculate which part of 32-bit dwords in the sector are unique        */
+/* 2-pass hash coverage: select the most populated sector and then        */
+/*   calculate which part of 32/64-bit words in the sector are unique     */
 /***************************************************************************/
 
-class TwoPassDWordCoverage : public Entropy
+template <class hash_t>
+class TwoPassHashCoverage : public Entropy
 {
   static const size_t HASHSIZE = 2*mb;  // it should be small enough to fit in most CPU last-level caches
   byte *table;
   size_t bits[256];
 public:
-  TwoPassDWordCoverage();
-  virtual const char* name()        {return "2-pass DWord coverage";};
-  virtual ~TwoPassDWordCoverage()   {delete[] table;}
+  TwoPassHashCoverage();
+  virtual const char* name()       {return sizeof(hash_t)==4? "2-pass DWord coverage" : "2-pass QWord coverage";};
+  virtual ~TwoPassHashCoverage()   {delete[] table;}
   virtual void smoke (void *buf, size_t bufsize, double *entropy);
 };
 
-TwoPassDWordCoverage::TwoPassDWordCoverage()
+template <class hash_t>
+TwoPassHashCoverage<hash_t>::TwoPassHashCoverage()
 {
   table = new byte[HASHSIZE];
   bits[0] = 0;
@@ -285,7 +304,8 @@ TwoPassDWordCoverage::TwoPassDWordCoverage()
     bits[i]  =  bits[i/2] + (i%2);
 }
 
-void TwoPassDWordCoverage::smoke (void *buf, size_t bufsize, double *entropy)
+template <class hash_t>
+void TwoPassHashCoverage<hash_t>::smoke (void *buf, size_t bufsize, double *entropy)
 {
   const size_t STEP = 1;        // Check only one of every STEP positions
   const size_t MAX_SECTORS = 8192;
@@ -299,9 +319,9 @@ void TwoPassDWordCoverage::smoke (void *buf, size_t bufsize, double *entropy)
   uint32_t sectors_mask = sectors-1;
 
   // 1st pass: count hashes in each sector
-  for (size_t i=0;  i<=bufsize-sizeof(uint32_t);  i+=STEP)
+  for (size_t i=0;  i<=bufsize-sizeof(hash_t);  i+=STEP)
   {
-    uint32_t hash = hash_function(*(uint32_t*)(p+i));
+    uint32_t hash = hash_function(*(hash_t*)(p+i));
     sector_cnt[hash & sectors_mask]++;
   }
 
@@ -313,9 +333,9 @@ void TwoPassDWordCoverage::smoke (void *buf, size_t bufsize, double *entropy)
 
   // 2nd pass: compute the sector's coverage
   memset(table,0,HASHSIZE);
-  for (size_t i=0;  i<=bufsize-sizeof(uint32_t);  i+=STEP)
+  for (size_t i=0;  i<=bufsize-sizeof(hash_t);  i+=STEP)
   {
-    uint32_t hash = hash_function(*(uint32_t*)(p+i));
+    uint32_t hash = hash_function(*(hash_t*)(p+i));
     if ((hash&sectors_mask) == sector)
       table[(hash>>sectors_log) % HASHSIZE]  |=  1 << (hash>>29);
   }
@@ -341,7 +361,7 @@ size_t parseMem (char *param, int *error, char spec)
   char c = *param=='='? *++param : *param;
   if (! (c>='0' && c<='9'))  {*error=1; return 0;}
   while (c>='0' && c<='9')   n=n*10+c-'0', c=*++param;
-  switch (c? c : spec)
+  switch (tolower(c? c : spec))
   {
     case 'b':  return n;
     case 'k':  return n*kb;
@@ -355,10 +375,10 @@ size_t parseMem (char *param, int *error, char spec)
 // Returns a string with the amount of memory
 char *showMem (size_t mem, char *result)
 {
-       if (mem%gb==0) sprintf (result, "%.0lfgb", double(mem/gb));
-  else if (mem%mb==0) sprintf (result, "%.0lfmb", double(mem/mb));
-  else if (mem%kb==0) sprintf (result, "%.0lfkb", double(mem/kb));
-  else                sprintf (result, "%.0lfb",  double(mem));
+       if (mem%gb==0) sprintf (result, "%.0lfGB", double(mem/gb));
+  else if (mem%mb==0) sprintf (result, "%.0lfMB", double(mem/mb));
+  else if (mem%kb==0) sprintf (result, "%.0lfKB", double(mem/kb));
+  else                sprintf (result, "%.0lfB",  double(mem));
   return result;
 }
 
@@ -393,8 +413,9 @@ int main (int argc, char **argv)
     Order1Entropy Order1S;
     DWordHashEntropy DWordHashS;
     DWordCoverage DWordS;
-    TwoPassDWordCoverage TwoPassDWordS;
-    Entropy *smokers[] = {&ByteS, &WordS, &Order1S, &DWordHashS, &DWordS, &TwoPassDWordS};
+    TwoPassHashCoverage<uint32_t> TwoPassDWordS;
+    TwoPassHashCoverage<uint64_t> TwoPassQWordS;
+    Entropy *smokers[] = {&ByteS, &WordS, &Order1S, &DWordHashS, &DWordS, &TwoPassDWordS, &TwoPassQWordS};
     const int NumSmokers = sizeof(smokers)/sizeof(*smokers);
     double entropy, min_entropy[NumSmokers], avg_entropy[NumSmokers], max_entropy[NumSmokers];
     int incompressible[NumSmokers];  char incompressible_list[NumSmokers][1000];
