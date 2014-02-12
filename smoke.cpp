@@ -269,7 +269,7 @@ void TwoPassDWordCoverage::smoke (void *buf, size_t bufsize, double *entropy)
 
   uint32_t sectors = bufsize/(256*kb),  sectors_log = 0;
   if (sectors > MAX_SECTORS)  sectors = MAX_SECTORS;
-  while (sectors) sectors/=2, sectors_log++;
+  while (sectors>1) sectors/=2, sectors_log++;
   sectors = 1<<sectors_log;
   uint32_t sectors_mask = sectors-1;
 
