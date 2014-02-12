@@ -31,6 +31,31 @@ uint32_t hash_function (uint32_t x)
 }
 
 
+// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// CRC hashing **************************************************************************************************************************************
+// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#define GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
+#if GCC_VERSION >= 403
+
+// Requires GCC4.3 and SSE4.2-enabled CPU; and of course compatible only with Crc32CastagnoliPolynom
+#include <x86intrin.h>
+#include <cpuid.h>
+uint32_t a_mm_crc32_u32(uint32_t crc, uint32_t value) {
+  asm("crc32l %[value], %[crc]\n" : [crc] "+r" (crc) : [value] "rm" (value));
+  return crc;
+}
+#define hash_function(c)  (a_mm_crc32_u32(0xFFFFFFFF,(c)))
+
+bool crc32c()  /* Check CPU for CRC32c asm instruction support (part of SSE4.2) */
+{
+  uint32_t eax, ebx, ecx, edx;
+  __get_cpuid(1, &eax, &ebx, &ecx, &edx);
+  return (ecx & bit_SSE4_2) != 0;
+}
+
+#endif
+
 /**************************************************************************/
 /* Byte entropy: calculate compression ratio with the 8-bit order-0 model */
 /**************************************************************************/
